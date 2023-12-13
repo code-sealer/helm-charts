@@ -9,7 +9,7 @@ fi
 
 clear
 
-export CODESEALER_HELM_REPO=https://raw.githubusercontent.com/code-sealer/helm-charts/gh-pages
+export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
 export CODESEALER_HELM_CHART=codesealer/codesealer
 
 export INGRESS_NAMESPACE=ingress-nginx

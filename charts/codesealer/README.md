@@ -57,7 +57,7 @@ To install this Helm chart, set the `INGRESS_NAMESPACE` variable to match your t
 ingress deployment and run the following commands:
 
 ```bash
-helm repo add codesealer https://raw.githubusercontent.com/code-sealer/helm-charts/gh-pages
+helm repo add codesealer https://code-sealer.github.io/helm-charts
 helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer-system \
   --set codesealerToken=${CODESEALER_TOKEN} \
   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
