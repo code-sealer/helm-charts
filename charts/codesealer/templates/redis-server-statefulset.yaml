@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+   {{- include "redis.labels" . | nindent 4 }}
+  name: {{ .Values.redis.name }}
+  namespace: {{ .Values.redis.namespace }}
+spec:
+  serviceName: {{ .Values.redis.name }}
+  replicas: {{ .Values.redis.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "redis.selectorLabels" . | nindent 6 }}
+  template:  
+    metadata:
+      labels:
+      {{- include "redis.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.redis.service.name }}
+          image: "{{ .Values.redis.image }}:{{ .Values.redis.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.redis.service.targetPort }}
+              name: {{ .Values.redis.service.name }}
+          command: ["redis-server"]
+          args: ["/conf/redis.conf"]
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - name: conf
+              mountPath: /conf
+              readOnly: false
+            - name: redis-data
+              mountPath: /data
+              readOnly: false
+      volumes:
+        - name: conf
+          configMap:
+            name: redis-server
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pv-claim

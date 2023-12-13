@@ -1,0 +1,823 @@
+# Default values for codesealer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/code-sealer
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: regcred
+
+imageCredentials:
+  password: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+probes:
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 10
+
+initContainers:
+  name: codesealer-init-networking
+  image: codesealer-init-networking
+  tag: latest
+
+webhook:
+  name: codesealer-mutating-webhook
+  replicaCount: 1
+  namespace: codesealer-system
+  image: codesealer-webhook
+  tag: latest
+
+  service:
+    type: ClusterIP
+    name: https
+    port: 443
+    targetPort: 8443
+    scheme: HTTPS
+
+  annotations: {}
+
+  env:
+    HTTPS_PORT: "8443"
+    HTTPS_ENABLED: "true"
+    SSL_CRT_FILE_NAME: "/certs/tls.crt"
+    SSL_KEY_FILE_NAME: "/certs/tls.key"
+    PATCH_FILE_NAME: "/patch/patch.yaml"
+    CODESEALER_DEBUG: "TRUE"
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # autoscaling:
+  #   enabled: false
+  #   minReplicas: 1
+  #   maxReplicas: 100
+  #   targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+  # Additional volumes on the output Deployment definition.
+  # volumes:
+  #   - name: codesealer-mutating-webhook-cert
+  #     secret:
+  #       secretName: codesealer-mutating-webhook-cert
+  #   - name: codesealer-mutating-webhook-patch
+  #     configMap:
+  #       name: codesealer-mutating-webhook-patch
+
+  # Additional volumeMounts on the output Deployment definition.
+  # volumeMounts:
+  #   - name: codesealer-mutating-webhook-cert
+  #     mountPath: /certs
+  #     readOnly: true
+  #   - name: codesealer-mutating-webhook-patch
+  #     mountPath: /patch
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  # nodeSelector: {}
+
+  # tolerations: []
+
+  # affinity: {}
+
+admission:
+  # The name of the admission to use.
+  # If not set, a name is generated using the fullname template
+  name: "codesealer-mutating-webhook"
+
+  # The path for the webhook
+  path: "/mutate-codesealer"
+
+  # How the mutating webhook fails
+  failurePolicy: Ignore
+
+  # The timeout for the webhook
+  timeout: 5
+
+  # default to NoneOnDryRun
+  sideEffects: "None"
+
+  # default to Never
+  reinvocationPolicy: "Never"
+
+  # Annotations to add to service. (Optional)
+  annotations: {}
+
+  labels:
+    app: codesealer-mutating-webhook
+    service: codesealer-mutating-webhook
+
+  # admission CA can be used to override the Certs that will be used
+  # to sign the keys used by the admission operator.
+  ca:
+    # disable if manually creating certs
+    # provide cert and key via --set-file
+    create: true
+    # # A base64 encoded PEM format certificate
+    # cert: ""
+    # # A base64 encoded PEM format private key
+    # key: ""
+    # Expiry time of CA in days for generated certs
+    expiration: 365
+
+  # admission secret with client certs mounted within the admission controller.
+  secret:
+    create: true
+    # name of the secret (auto-generated)
+    name: "codesealer-mutating-webhook-cert"
+    type: Opaque
+    # type: kubernetes.io/tls
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    cert: ""
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    key: ""
+    # override via --set-file
+    # Annotations to add to admission secret. (Optional)
+    annotations: {}
+
+worker:
+  name: codesealer-core
+  replicaCount: 1
+  image: codesealer-core-modsec
+  tag: master
+
+  # Ingress Controller intercept parameters
+  ingress:
+    # Namespace where the Ingress Controller resides
+    namespace: ingress-nginx
+
+  service:
+    type: ClusterIP
+    name: https
+    port: 8443
+
+  # admission CA can be used to override the Certs that will be used
+  # to sign the keys used by the admission operator.
+  ca:
+    # disable if manually creating certs
+    # provide cert and key via --set-file
+    create: true
+    # # A base64 encoded PEM format certificate
+    # cert: ""
+    # # A base64 encoded PEM format private key
+    # key: ""
+    # Expiry time of CA in days for generated certs
+    expiration: 365
+
+  # admission secret with client certs mounted within the admission controller.
+  secret:
+    create: "true"
+    # name of the secret (auto-generated)
+    name: codesealer-ingress-tls
+    type: kubernetes.io/tls
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    cert: ""
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    key: ""
+    # override via --set-file
+    annotations: {}
+
+  config:
+    ################################################
+    #               Network settings               #
+    ################################################
+    # The 'network' section defines the basic server configuration of the reverse proxy.
+    network:
+      # The IP and port to listen for requests on.
+      listen: 9443
+      # If true, TLS will be enabled.
+      tls: true
+      # Sets the minimum TLS version the reverse proxy will use. Allowed values are:
+      # 'TLS1.0', 'TLS1.1', 'TLS1.2', 'TLS1.3'
+      # If this option is not set, TLS 1.2 is used as the default.
+      tlsMinVersion: "TLS1.2"
+      # Paths for TLS certificate and key files that are used if 'manager.tls' is set to true.
+      # When using the Management Portal, the certificate and key above will be used as
+      # fallback when *no* certificate and key is specified in the Management Portal.
+      certFile: "./certs/tls.crt"
+      keyFile: "./certs/tls.key"
+      # If 'true', this Worker will  be able to provision certificates via Let's Encrypt. Note
+      # that each endpoint where Let's Encrypt certificates are want must also have the
+      # 'endpoint.letsEncrypt' value set to 'true'.
+      letsEncrypt: false
+      # If 'true', TLS certificate errors from the backend server will be ignored.
+      # This is for example useful if self-signed or otherwise internal certificates are used.
+      ignoreTLS: true
+      # 'network.disallowPrivate' ensures that private IP addresses cannot be accessed by the
+      # proxy. 'network.disallowLocal' ensures that that only global unicast addresses can be
+      # accessed by the proxy, disallowing addresses such as loopback or multicast addresses
+      # (note that private addresses count as global). These options are useful to restrict
+      # Management Portal users from attempting to access local or private infrastructure.
+      disallowLocal: false
+      disallowPrivate: false
+      # The timeout, in seconds, before giving up on requests to the backend server.
+      remoteTimeout: 5
+      # If true, the Worker will assume that the last entry in the last `X-Forwarded-For`
+      # header is the actual client IP for use in logs and IP allow-lists for endpoints.
+      # Incompatible with 'network.useProxyProtocol'.
+      behindProxy: false
+      # When true, PROXY protocol will be enabled on the listening socket. Both version 1
+      # (text based) and version 2 (binary based) are supported. Incompatible with
+      # 'network.behindProxy'.
+      useProxyProtocol: false
+
+    ################################################
+    #             Bootloader settings              #
+    ################################################
+    # The 'bootloader' section contains some basic configuration of the Bootloader.
+    bootloader:
+      # Path to a configuration file for the Web Application Firewall. The file must contain a
+      # set of ModSecurity rules.
+      modSecurityConf: "./modsec.conf"
+      # This sets the prefix all HTTP requests related to the bootloader will get. It is
+      # crucial that this is chosen to avoid potential clashes with actual served files. # The
+      # bootPrefix must start and end with '/', and can only contain characters
+      # 'A-Za-z0-9_.~-'.
+      bootPrefix: "/~bl/"
+      # This option can be set to 'true' in order to run the Worker in "standalone" mode. Each
+      # endpoint can then be configured in this file (see the 'endpoint' section below), instead
+      # of configuring them through the Management Portal. In this mode, no coordination is
+      # done through Redis. This option is *not* recommended for production deployments.
+      fsEndpoints: true
+      # Can be set to "redis" or "local". For "redis", state is shared amongst
+      # workers through the configured Redis instance. With "local", state is stored
+      # in memory in the worker. The "redis" instance is required for sharing
+      # sessions across multiple workers and for persistence across restarts. The
+      # recommended value is "redis".
+      sessionBackend: "redis"
+
+    ################################################
+    #               Cache settings                 #
+    ################################################
+    # The 'cache' settings controls some basic settings of the Worker's HTTP cache.
+    cache: 
+      # A path to folder where the cached files will be stored. The path must be absolute.
+      # Note that *all* contents of the folder will be deleted when the Worker starts.
+      folder: ""
+      # The maximum file size to cache, in bytes.
+      maxFileSize: 0
+      # The maximum total size of the cache, in bytes.
+      maxSize: 0
+
+    ################################################
+    #              Endpoint settings               #
+    ################################################
+    # When 'bootloader.fsEndpoints' is 'true' configuration of each endpoint will be read from
+    # this section. Otherwise, this section has no effect. The 'bootloader.fsEndpoints' option
+    # is *not* recommended for production deployments.
+    endpoint:
+      ################################################
+      #          Endpoint general settings           #
+      ################################################
+      # Disables Codesealer protection for this endpoint. Traffic is still forwarded, but new
+      # requests will be unprotected.
+      disable: false
+      # This URL should match the hostname of the Codesealer instance. The reverse proxy will
+      # only process and protect requests that match the URL defined in this option - any
+      # other requests will result in a `404 Not Found` response. Allowed values are URLs of
+      # the form '<scheme>://<hostname or IP>[:port]' The scheme must be either `http` or
+      # `https`. The port is optional. Wildcards are allowed in the hostname.
+      # remoteIn = "hostScheme://hostname"
+      hostScheme: https
+      hostname: localhost
+      # This is the address where Codesealer will proxy requests to. Allowed values are URLs
+      # of the form '<scheme>://<hostname or IP>[:port]' The scheme must be either `http` or
+      # `https`. The port is optional.
+      #
+      # All requests matching the Incoming URL will be sent to this address instead. The
+      # request itself will not be altered - in particular, by default the `Hostname` header
+      # will not be modified.
+      # remoteOut = "https://127.0.0.1:port"
+      port: 443
+      # This list of scripts will select which scripts are protected. Only scripts that occur
+      # in HTML '<script>' tags will be protected this way. The entries need to match the
+      # 'src' attribute in corresponding '<script>' tags exactly. When 'endpoint.scriptOptOut'
+      # is 'true', entries in this list can be prefixed with 'optout:' to remove protection
+      # from selected scripts.
+      scriptOptIn: []
+      # When 'true', all scripts that occur in HTML '<script>' tags are protected by
+      # Codesealer Enterprise automatically. Note that scripts inserted dynamically after page
+      # load are not protected by this option - see instead the 'endpoint.enableXhr' section.
+      scriptOptOut: true
+      # When 'true', Codesealer will ignore any TLS errors from the backend server. This is
+      # for example useful if self-signed or otherwise internal certificates are used.
+      ignoreRemoteTLS: true
+      # This option will only take effect if 'network.letsEncrypt' is 'true'. By enabling this
+      # option, you agree to the at any time applicable TOS for Let's Encrypt. Note: The DNS
+      # Record for the URL specified in 'endpoint.remoteIn' must point to Codesealer.
+      letsEncrypt: false
+      # Paths for TLS certificate and key files that are used if 'manager.tls' is set to true.
+      tlsCertPath: "./certs/tls.crt"
+      tlsKeyPath: "./certs/tls.key"
+
+      ################################################
+      #            Endpoint ANP settings             #
+      ################################################
+      # When 'true', all XHR and fetch calls will be automatically replaced with corresponding
+      # ANP variants.
+      autoXhr: true
+      # This allows ANP XHR and fetch to be accessed on the window object. The
+      # 'endpoint.autoXhr' option must be 'true'.
+      exposeXhrWindow: true
+      # When 'true', scripts inserted dynamically on head and body elements will be
+      # intercepted and independently transferred through ANP.
+      protectDynamicContent: true
+      # When 'true', all WebSocket calls will be automatically replaced with corresponding ANP
+      # variants.
+      enableWebSocket: true
+      # This allows ANP WebSockets to be accessed on the window object. The
+      # 'endpoint.enableWebSocket' option must be 'true'.
+      exposeWebSocketWindow: true
+      # A list of allowed endpoints to protect for ANP requests. If the list is empty, all
+      # domains are allowed.
+      allowedDomains: []
+      # Session lifetime for Application Network Protection. If set to 0, the default will be
+      # used.
+      sessionLifetime: 0
+
+      ################################################
+      #            Endpoint WAF settings             #
+      ################################################
+      # When 'true', the Web Application Firewall is enabled. See 'bootloader.modSecurityConf'
+      # for how to configure the WAF.
+      enableWaf: true
+      # When 'true', the entire payload of requests, including response headers and body, will
+      # be passed through the WAF.
+      wafFullTransaction: true
+      # When 'true', no requests will be blocked by the WAF, and all interventions will merely
+      # be logged.
+      wafMonitorMode: false
+      # The Paranoia Level (PL) setting allows you to choose the desired level
+      # of rule checks that will add to your anomaly scores.
+      paranoiaLevel: 1
+      # It is possible to execute rules from a higher paranoia level but not include
+      # them in the anomaly scoring. This allows you to take a well-tuned system on
+      # paranoia level 1 and add rules from paranoia level 2 without having to fear
+      # the new rules would lead to false positives that raise your score above the
+      # threshold.     
+      executing_paranoia_level: 1
+
+      ################################################
+      #         Endpoint advanced settings           #
+      ################################################
+      # This will set the Server Name Indication (SNI) on proxied TLS requests to the provided
+      # value instead of the requested host. This can be useful if the installed TLS
+      # certificate on the remote server is issued to a different domain.
+      SNIOverwrite: ""
+      # This will set the 'Hostname' header on proxied requests to the provided value instead
+      # of the requested host. This can be useful if the backend server uses virtual hosting.
+      HostnameOverwrite: ""
+      # This option must be 'true' if the backend serves HTML where '<script>' tags occur
+      # after the '</body>' or '</html>' tags.
+      invalidHTMLCompat: false
+      # When 'true', code in the '<body>' tag's 'onload' attribute will be correctly executed.
+      bodyOnloadCompat: false
+      # When 'true' Codesealer will only allow GET, HEAD and OPTIONS request methods from
+      # clients that do not have an active Codesealer session, blocking all other methods.
+      strictSession: false
+      # When 'true' requests will be redirected to a non-interactive validation page before
+      # being redirected to the requested URL. Once the session is validated, the validation
+      # page will not be shown again, unless the session hits a rate limit. This feature can
+      # reduce the effects of Layer 7 DDoS attacks.
+      appThrottling: false
+      # When app throttling is enabled this value will determine the maximum sustained number 
+      # of requests per second allowed for each client.
+      appThrottlingRate: 10
+      # When app throttling is enabled this value will determine the maximum burst of requests 
+      # allowed for each client.
+      appThrottlingBurst: 20
+      # When app throttling is enabled this value will determine the amount of iterations 
+      # performed in the PoW challenge.
+      appThrottlingIterations: 256
+      # When 'true' Codesealer will not set the 'X-Forwarded-For' and 'X-Forwarded-Host'
+      # headers.
+      #
+      # This option is meant for testing scenarios, where adding the headers may confuse
+      # existing infrastructure. This should not be used in production scenarios.
+      omitProxyHeaders: false
+      # When 'true', the 'Content-Security-Policy' HTTP Header will be stripped from all
+      # requests that have scripts protected. A better solution is to allow 'eval' by setting
+      # the header "Content-Security-Policy: script-src 'unsafe-eval'".
+      stripContentSecurity: false
+      # When 'true' Coesealer will fire a `DOMContentLoaded` and `load` event after loading
+      # all protected scripts. This will enable applications that rely on these events to
+      # function properly with Codesealer protection.
+      injectDOMContentLoaded: false
+      # Setting this to 'true' will ensure that absolute `Location` header redirects for the
+      # Outgoing URL are changed to relative URLs instead.
+      redirectCompat: false
+      # When 'true', extra cookies will not be attached to responses. This can cause some
+      # cookies to not be set on protected requests.
+      disableCSCookies: false
+      # When 'true', all requests to this endpoint will be terminated as early as possible. This can be used
+      # to mitigate smaller DoS attacks on multi-endpoint deployments.
+      killSwitch: false
+      # When 'true' protected script tags will not have their attributes removed. Note that
+      # some standard attributes are always removed.
+      scriptRetainAttributes: false
+      # The IP addresses listed here will bypass Codesealer protection. Please note that
+      # additional configuration is needed for Codesealer to see client IPs when using proxy
+      # servers or load balancing in front of Codesealer.
+      ipBypassList: []
+      # If 'true', the behavior of 'ipBypassList' is inverted. This means that only the IPs
+      # in the bypass list will be protected.
+      invertIPBypassList: false
+      # If non-empty, only traffic originating from IP addresses in this list will be allowed
+      # to access the endpoint.
+      ipAccessList: []
+      # A list of JavaScript symbols to expose on the `window` object.
+      exposeJSVars: []
+      # The given JavaScript code will be injected into the beginning protected scripts. This
+      # can be used in debugging scenarios, where it is not feasible to modify certain aspects
+      # of a protected application.
+      scriptPreamble: ""
+      # The given JavaScript code will be injected at the end of all protected scripts. This
+      # can be used in debugging scenarios, where it is not feasible to modify certain aspects
+      # of a protected application.
+      scriptPostamble: ""
+      # ES6 modules are bundled into a single file by the worker. This option determines
+      # wheter the resulting bundle should also be minified.
+      minifyBundles: true
+
+      # The 'endpoint.proxyPathFilter' section defines a set of rules for selectively blocking
+      # requests from being proxied. The rules are processed in order, such that firewall-like
+      # behavior can be achieved. The first rule to match will take effect. The path matching
+      # is case insensitive.
+      proxyPathFilter:
+        block: true
+        path: "/api"
+
+      # The 'endpoint.protectionPathFilter' section defines a set of rules for selectively
+      # bypassing script protection. The rules are processed in order, such that firewall-like
+      # behavior can be achieved. The first rule to match will take effect. The path
+      # matching is case insensitive.
+      protectionPathFilter:
+        bypass: false
+        path: "/"
+        # When set to 'true' this option enables the HTTP cache feature for this endpoint. See
+        # the the 'cache' section for Worker specific settings and the 'endpoint.cacheRule'
+        # section for configuration of the cache rules.
+        cacheEnabled: false
+
+      # The 'endpoint.scriptReplace' section defines a set of rules for simple search and
+      # replace in all scripts protected by Codesealer.
+      scriptReplace:
+        to: ""
+        from: ""
+
+      ################################################
+      #           Endpoint cache settings              #
+      ################################################
+      # The 'endpoint.cacheRule' section defines a set of rules for Codesealer's internal HTTP
+      # cache. See also the 'cache' section for Worker specific settings.
+      cacheRule:
+        # The value of the Content-Type header to match on. Both 'contentType' and 'path' has to
+        # match for the resource to be cached. The special wildcard value '*' can be used to
+        # match all content types.
+        contentType: ""
+        # The path of the request to match on. Both 'contentType' and 'path' has to match for
+        # the resource to be cached. The special wildcard value '*' can be used to match all
+        # paths.
+        path: ""
+        # If this value is not zero, the expiry of the cached resource will be overriden.
+        overrideMaxAge: 0
+        # When 'true', resources are cached despite 'no-store' directives.
+        ignoreNoStore: false
+        # When 'true', resources are cached despite 'no-cache' directives.
+        ignoreNoCache: false
+
+  annotations: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # autoscaling:
+  #   enabled: false
+  #   minReplicas: 1
+  #   maxReplicas: 100
+  #   targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+  # Additional volumes on the output Deployment definition.
+  # volumes:
+  #   - name: codesealer-mutating-webhook-cert
+  #     secret:
+  #       secretName: codesealer-mutating-webhook-cert
+  #   - name: codesealer-mutating-webhook-patch
+  #     configMap:
+  #       name: codesealer-mutating-webhook-patch
+
+  # Additional volumeMounts on the output Deployment definition.
+  # volumeMounts:
+  #   - name: codesealer-mutating-webhook-cert
+  #     mountPath: /certs
+  #     readOnly: true
+  #   - name: codesealer-mutating-webhook-patch
+  #     mountPath: /patch
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+redis:
+  # The address of the Redis cluster.
+  name: redis-server
+  namespace: codesealer-system
+  replicaCount: 1
+  image: redis
+  tag: 6
+
+  service:
+    type: ClusterIP
+    name: redis
+    port: 6379
+    targetPort: 6379
+
+  config:
+    # The maximum number of Redis connections to pool. Note that this is per Worker
+    # instance, so keep this in mind if you are subject to connection limitations.
+    redisMaxConn: 100
+    # If 'true', TLS certificate errors for Redis will be ignored.
+    redisIgnoreTLS: false
+    # Redis connect timeout specified in milliseconds. Defaults to 50 if not set.
+    redisConnectTimeout: 50
+    # Redis read timeout specified in milliseconds. Defaults to 250 if not set.
+    redisReadTimeout: 250
+    # Redis write timeout specified in milliseconds. Defaults to 250 if not set.
+    redisWriteTimeout: 250
+
+
+  annotations: {}
+
+  labels: {}
+
+  selectorLabels: {}
+
+  podAnnotations: {}
+
+  podLabels: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # autoscaling:
+  #   enabled: false
+  #   minReplicas: 1
+  #   maxReplicas: 100
+  #   targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+manager:
+  name: core-manager
+  replicaCount: 1
+  restartPolicy: Always
+  image: core-manager
+  tag: master
+
+  service:
+    type: ClusterIP
+    name: https
+    port: 8444
+
+  ################################################
+  #               Manager settings               #
+  ################################################
+  # The 'manager' section defines some basic settings of the Mangement Portal.
+  config:
+    # The IP and port to listen for requests on.
+    listen: 7443
+    # If true, TLS will be enabled.
+    tls: true
+    # Paths for TLS certificate and key files, if 'manager.tls' is set to true.
+    certFile: "./tls.crt"
+    keyFile: "./tls.key"
+    # Configuration of Let's Encrypt certificates.
+    letsEncrypt: false
+    letsEncryptDomain: ""
+  
+    ################################################
+    #           Manager backend settings           #
+    ################################################
+    # The 'manager.backend' section defines how to connect to Redis and InfluxDB.
+    # Multiple backends can be defines in order for one Management Portal to connect to
+    # several sets for workers.
+    backend:
+    # The name of the backend.
+      backendID: "default"
+
+  annotations: {}
+
+  labels:
+    app: core-manager
+    codesealer.service: core-manager
+
+  selectorLabels:
+    app: core-manager
+    service: core-manager
+
+  podAnnotations: {}
+
+  podLabels: {}
+
+  env:
+    DEBUG_LEVEL: "DEBUG"
+    LOG_LEVEL: "INFO"
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # autoscaling:
+  #   enabled: false
+  #   minReplicas: 1
+  #   maxReplicas: 100
+  #   targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+  # Additional volumes on the output Deployment definition.
+  # volumes:
+  #   - name: config-toml
+  #     configMap:
+  #       name: config-toml
+  #   - name: core-manager-data
+  #     persistentVolumeClaim:
+  #       claimName: core-manager-pv-claim
+  #   - name: codesealer-ingress-tls
+  #     secret:
+  #       secretName: codesealer-ingress-tls
+
+  # Additional volumeMounts on the output Deployment definition.
+  # volumeMounts:
+  #   - mountPath: /etc/codesealer-core/config.toml
+  #     subPath: config.toml
+  #     name: config-toml
+  #   - name: core-manager-data
+  #     mountPath: /var/lib/core-manager
+  #     readOnly: false
+  #   - mountPath: /etc/core-manager
+  #     name: codesealer-ingress-tls
+  #     readOnly: true
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 8444
+  name: core-manager
+
+# Ingress Parameters for Core-Manager
+ingress:
+  enabled: false
+  className: "nginx"
+  namespace: codesealer-system
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: core-manager-tls
+     hosts:
+       - core-manager.local
+
+  labels: {}
+
+  # admission CA can be used to override the Certs that will be used
+  # to sign the keys used by the admission operator.
+  ca:
+    # disable if manually creating certs
+    # provide cert and key via --set-file
+    create: true
+    # # A base64 encoded PEM format certificate
+    # cert: ""
+    # # A base64 encoded PEM format private key
+    # key: ""
+    # Expiry time of CA in days for generated certs
+    expiration: 365
+
+  # admission secret with client certs mounted within the admission controller.
+  secret:
+    create: "true"
+    # name of the secret (auto-generated)
+    name: core-manager-tls
+    type: kubernetes.io/tls
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    cert: ""
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    key: ""
+    # override via --set-file
+    annotations: {}
+
+influxDB:
+  influxAddress: ""
+  influxToken: ""
+  influxIgnoreTLS: false

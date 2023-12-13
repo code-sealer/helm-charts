@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-toml
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}
+  namespace: {{ .Values.worker.ingress.namespace }}
+data:
+  config.toml: |
+    [network]
+    listen = "0.0.0.0:{{ .Values.worker.config.network.listen }}"
+    tls = {{ .Values.worker.config.network.tls }}
+    tlsMinVersion = "{{ .Values.worker.config.network.tlsMinVersion }}"
+    certFile = "{{ .Values.worker.config.network.certFile }}"
+    keyFile = "{{ .Values.worker.config.network.keyFile }}"
+    letsEncrypt = {{ .Values.worker.config.network.letsEncrypt }}
+    ignoreTLS = {{ .Values.worker.config.network.ignoreTLS }}
+    disallowLocal = {{ .Values.worker.config.network.disallowLocal }}
+    disallowPrivate = {{ .Values.worker.config.network.disallowPrivate }}
+    remoteTimeout = {{ .Values.worker.config.network.remoteTimeout }}
+    behindProxy = {{ .Values.worker.config.network.behindProxy }}
+    useProxyProtocol = {{ .Values.worker.config.network.useProxyProtocol }}
+
+    [bootloader]
+    redisAddress = "redis://{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local"
+    redisMaxConn = {{ .Values.redis.config.redisMaxConn }}
+    redisIgnoreTLS = {{ .Values.redis.config.redisIgnoreTLS }}
+    redisConnectTimeout = {{ .Values.redis.config.redisConnectTimeout }}
+    redisReadTimeout = {{ .Values.redis.config.redisReadTimeout }}
+    redisWriteTimeout = {{ .Values.redis.config.redisWriteTimeout }}
+    influxAddress = "{{ .Values.influxDB.influxAddress }}"
+    influxToken = "{{ .Values.influxDB.influxToken }}"
+    influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
+    modSecurityConf = "{{ .Values.worker.config.bootloader.modSecurityConf }}"
+    bootPrefix = "{{ .Values.worker.config.bootloader.bootPrefix }}"
+    fsEndpoints = {{ .Values.worker.config.bootloader.fsEndpoints }}
+    sessionBackend = "{{ .Values.worker.config.bootloader.sessionBackend }}"
+
+    [cache]
+    folder = "{{ .Values.worker.config.cache.folder }}"
+    maxFileSize = {{ .Values.worker.config.cache.maxFileSize }}
+    maxSize = {{ .Values.worker.config.cache.maxSize }}
+
+    [[endpoint]]
+    disable = {{ .Values.worker.config.endpoint.disable }}
+    remoteIn = "{{ .Values.worker.config.endpoint.hostScheme }}://{{ .Values.worker.config.endpoint.hostname }}"
+    remoteOut = "https://127.0.0.1:{{ .Values.worker.config.endpoint.port }}"
+    scriptOptIn = {{ .Values.worker.config.endpoint.scriptOptIn }}
+    scriptOptOut = {{ .Values.worker.config.endpoint.scriptOptOut }}
+    ignoreRemoteTLS = {{ .Values.worker.config.endpoint.ignoreRemoteTLS }}
+    letsEncrypt = {{ .Values.worker.config.endpoint.letsEncrypt }}
+    tlsCertPath = "{{ .Values.worker.config.endpoint.tlsCertPath }}"
+    tlsKeyPath = "{{ .Values.worker.config.endpoint.tlsKeyPath }}"
+    autoXhr = {{ .Values.worker.config.endpoint.autoXhr }}
+    exposeXhrWindow = {{ .Values.worker.config.endpoint.exposeXhrWindow }}
+    protectDynamicContent = {{ .Values.worker.config.endpoint.protectDynamicContent }}
+    enableWebSocket = {{ .Values.worker.config.endpoint.enableWebSocket }}
+    exposeWebSocketWindow = {{ .Values.worker.config.endpoint.exposeWebSocketWindow }}
+    allowedDomains = {{ .Values.worker.config.endpoint.allowedDomains }}
+    sessionLifetime = {{ .Values.worker.config.endpoint.sessionLifetime }}
+    enableWaf = {{ .Values.worker.config.endpoint.enableWaf }}
+    wafFullTransaction = {{ .Values.worker.config.endpoint.wafFullTransaction }}
+    wafMonitorMode = {{ .Values.worker.config.endpoint.wafMonitorMode }}
+    SNIOverwrite = "{{ .Values.worker.config.endpoint.SNIOverwrite }}"
+    HostnameOverwrite = "{{ .Values.worker.config.endpoint.HostnameOverwrite }}"
+    invalidHTMLCompat = {{ .Values.worker.config.endpoint.invalidHTMLCompat }}
+    bodyOnloadCompat = {{ .Values.worker.config.endpoint.bodyOnloadCompat }}
+    strictSession = {{ .Values.worker.config.endpoint.strictSession }}
+    appThrottling = {{ .Values.worker.config.endpoint.appThrottling }}
+    appThrottlingRate = {{ .Values.worker.config.endpoint.appThrottlingRate }}
+    appThrottlingBurst = {{ .Values.worker.config.endpoint.appThrottlingBurst }}
+    appThrottlingIterations = {{ .Values.worker.config.endpoint.appThrottlingIterations }}
+    omitProxyHeaders = {{ .Values.worker.config.endpoint.omitProxyHeaders }}
+    stripContentSecurity = {{ .Values.worker.config.endpoint.stripContentSecurity }}
+    injectDOMContentLoaded = {{ .Values.worker.config.endpoint.injectDOMContentLoaded }}
+    redirectCompat = {{ .Values.worker.config.endpoint.redirectCompat }}
+    disableCSCookies = {{ .Values.worker.config.endpoint.disableCSCookies }}
+    killSwitch = {{ .Values.worker.config.endpoint.killSwitch }}
+    scriptRetainAttributes = {{ .Values.worker.config.endpoint.scriptRetainAttributes }}
+    ipBypassList = {{ .Values.worker.config.endpoint.ipBypassList }}
+    invertIPBypassList = {{ .Values.worker.config.endpoint.invertIPBypassList }}
+    ipAccessList = {{ .Values.worker.config.endpoint.ipAccessList }}
+    exposeJSVars = {{ .Values.worker.config.endpoint.exposeJSVars }}
+    scriptPreamble = "{{ .Values.worker.config.endpoint.scriptPreamble }}"
+    scriptPostamble = "{{ .Values.worker.config.endpoint.scriptPostamble }}"
+    minifyBundles = {{ .Values.worker.config.endpoint.minifyBundles }}
+
+    [[endpoint.proxyPathFilter]]
+    block = {{ .Values.worker.config.endpoint.proxyPathFilter.block }}
+    path = "{{ .Values.worker.config.endpoint.proxyPathFilter.path }}"
+
+    [[endpoint.protectionPathFilter]]
+    bypass = {{ .Values.worker.config.endpoint.protectionPathFilter.bypass }}
+    path = "{{ .Values.worker.config.endpoint.protectionPathFilter.path }}"
+    cacheEnabled = {{ .Values.worker.config.endpoint.protectionPathFilter.cacheEnabled }}
+
+    [[endpoint.scriptReplace]]
+    to = "{{ .Values.worker.config.endpoint.scriptReplace.to }}"
+    from = "{{ .Values.worker.config.endpoint.scriptReplace.from }}"
+
+    [[endpoint.cacheRule]]
+    contentType = "{{ .Values.worker.config.endpoint.cacheRule.contentType }}"
+    path = "{{ .Values.worker.config.endpoint.cacheRule.path }}"
+    overrideMaxAge = {{ .Values.worker.config.endpoint.cacheRule.overrideMaxAge }}
+    ignoreNoStore = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoStore }}
+    ignoreNoCache = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoCache }}
