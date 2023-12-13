@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: codesealer-mutating-webhook-patch
+  labels:
+   {{- include "webhook.labels" . | nindent 4 }}
+  namespace: {{ .Values.webhook.namespace }}
+data:
+  patch.yaml: |
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: {{ .Values.initContainers.name }}
+          image: "{{ .Values.image.repository }}/{{ .Values.initContainers.image }}:{{ .Values.initContainers.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.config.endpoint.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
+      containers:
+        - name: {{ .Values.worker.name }}
+          image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.worker.config.network.listen }}
+              hostPort: {{ .Values.worker.service.port }}
+              protocol: TCP
+          volumeMounts:
+            - name: config-toml
+              mountPath: /etc/codesealer-core/config.toml
+              subPath: config.toml
+            - name: {{ .Values.worker.secret.name }}
+              mountPath: /etc/codesealer-core/certs
+              readOnly: true
+            - name: modsec-conf
+              mountPath: /etc/codesealer-core/modsec.conf
+              subPath: modsec.conf
+            - name: modsecurity-conf
+              mountPath: /etc/codesealer-core/modsecurity/modsecurity.conf
+              subPath: modsecurity.conf
+            - name: crs-setup-conf
+              mountPath: /etc/codesealer-core/modsecurity/crs-setup.conf
+              subPath: crs-setup.conf
+      volumes:
+        - name: config-toml
+          configMap:
+            name: config-toml
+        - name: {{ .Values.worker.secret.name }}
+          secret:
+            secretName: {{ .Values.worker.secret.name }}
+        - name: modsec-conf
+          configMap:
+            name: modsec-conf
+        - name: modsecurity-conf
+          configMap:
+            name: modsecurity-conf
+        - name: crs-setup-conf
+          configMap:
+            name: crs-setup-conf

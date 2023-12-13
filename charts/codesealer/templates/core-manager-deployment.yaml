@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}
+  name: {{ .Values.manager.name }}
+  namespace: {{ .Values.ingress.namespace }}
+spec:
+  replicas: {{ .Values.manager.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "codesealer.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+      {{- include "codesealer.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.manager.name }}
+          image: "{{ .Values.image.repository }}/{{ .Values.manager.image }}:{{ .Values.manager.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          - name: {{ .Values.manager.service.name }}
+            hostPort: {{ .Values.manager.service.port }}
+            containerPort: {{ .Values.manager.config.listen }}
+            protocol: TCP
+          env:
+          {{- range $key, $value := .Values.manager.env }}
+            - name: {{ $key }}
+              value: {{ tpl $value $ | quote }}
+          {{- end }}
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/codesealer-core/config.toml
+              subPath: config.toml
+              name: config-toml
+            - name: core-manager-data
+              mountPath: /var/lib/core-manager
+              readOnly: false
+            - mountPath: /etc/core-manager
+              name: {{ .Values.ingress.secret.name }}
+              readOnly: true
+      restartPolicy: {{ .Values.manager.restartPolicy }}
+      volumes:
+        - name: config-toml
+          configMap:
+            name: config-toml-manager
+        - name: core-manager-data
+          persistentVolumeClaim:
+            claimName: core-manager-pv-claim
+        - name: {{ .Values.ingress.secret.name }}
+          secret:
+            secretName: {{ .Values.ingress.secret.name }}

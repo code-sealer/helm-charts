@@ -1,0 +1,60 @@
+{{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
+{{- if .Values.admission.secret.create }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+   {{- include "webhook.labels" . | nindent 4 }}
+  name: {{ include "webhook.secretName" . }}
+  namespace: {{ .Values.webhook.namespace }}
+type: {{ .Values.admission.secret.type }}
+data:
+  # Cert for {{ include "webhook.service.fullname" . }}
+  tls.crt: {{ $tls.clientCert }}
+  tls.key: {{ $tls.clientKey }}
+{{- end }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ .Values.admission.name }}
+  labels:
+   {{- include "webhook.labels" . | nindent 4 }}
+  namespace: {{ .Values.webhook.namespace }}
+webhooks:
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      # url: "https://codesealer-mutating-webhook.codesealer-system.svc.cluster.local/mutate-codesealer"
+      caBundle: {{ $tls.caCert }}
+      service:
+        name: {{ .Values.admission.name }}
+        namespace: {{ .Values.webhook.namespace }}
+        path: {{ .Values.admission.path }}
+        port: {{ .Values.webhook.service.port }}
+    failurePolicy: {{ .Values.admission.failurePolicy }}
+    matchPolicy: Equivalent
+    name: mutating-webhook.codesealer.com
+    namespaceSelector:
+      matchExpressions:
+        - key: codesealer.com/webhook
+          operator: In
+          values:
+            - enabled
+    objectSelector: {}
+    reinvocationPolicy: {{ .Values.admission.reinvocationPolicy }}
+    rules:
+      - apiGroups:
+          - "*"
+        apiVersions:
+          - "v1"
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - "pods"
+        scope: "Namespaced"
+    sideEffects: {{ .Values.admission.sideEffects }}
+    timeoutSeconds: {{ .Values.admission.timeout }}
