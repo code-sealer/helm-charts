@@ -1,22 +1,5 @@
-{{- if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  1. Add core-manager.local host with your Ingress IP to your local /etc/hosts file 
-  2. Get the application URL by running these commands:
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
-{{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Values.ingress.namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ .Values.manager.name }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Values.ingress.namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get --namespace {{ .Values.ingress.namespace }} svc -w {{ .Values.manager.name }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Values.ingress.namespace }} {{ include "codesealer.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  Run the following command on your Kubernetes Cluster:
-    kubectl --namespace {{ .Values.ingress.namespace }} port-forward service/{{ .Values.service.name }} 8080:{{ .Values.service.port }}
-    Visit https://localhost:8080 to access the Manager
-{{- end }}
+To enable Codesealer on Ingress Controller:
+
+  $ kubectl label ns {{ .Values.worker.ingress.namespace }} codesealer.com/webhook=enabled
+  
+  $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'

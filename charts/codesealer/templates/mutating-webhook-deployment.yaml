@@ -16,7 +16,7 @@ spec:
       labels:
       {{- include "webhook.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
