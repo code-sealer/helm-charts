@@ -174,6 +174,13 @@ worker:
     deployment: ingress-nginx-controller
     port: 443
 
+  redis:
+    namespace: redis
+
+    service:
+      name: "redis"
+      port: 6379
+
   service:
     type: ClusterIP
     name: https
@@ -184,7 +191,7 @@ worker:
   ca:
     # disable if manually creating certs
     # provide cert and key via --set-file
-    create: false
+    create: true
     # # A base64 encoded PEM format certificate
     # cert: ""
     # # A base64 encoded PEM format private key
@@ -194,7 +201,7 @@ worker:
 
   # admission secret with client certs mounted within the admission controller.
   secret:
-    create: false
+    create: true
     # name of the secret (auto-generated)
     name: codesealer-worker-tls
     type: kubernetes.io/tls
@@ -258,6 +265,27 @@ worker:
     ################################################
     # The 'bootloader' section contains some basic configuration of the Bootloader.
     bootloader:
+      # Addresses of redis nodes
+      redisAddress: ""
+      # If Redis Sentinel is used, this sets the master name
+      redisMaster: ""
+      # Username for redis
+      redisUser: "default"
+      # Password for redis
+      redisPassword: ""
+      # Whether to use TLS for redis connections
+      redisUseTLS: false
+      # The maximum number of Redis connections to pool. Note that this is per Worker
+      # instance, so keep this in mind if you are subject to connection limitations.
+      redisMaxConn: 100
+      # If 'true', TLS certificate errors for Redis will be ignored.
+      redisIgnoreTLS: false
+      # Redis connect timeout specified in milliseconds. Defaults to 50 if not set.
+      redisConnectTimeout: 50
+      # Redis read timeout specified in milliseconds. Defaults to 250 if not set.
+      redisReadTimeout: 250
+      # Redis write timeout specified in milliseconds. Defaults to 250 if not set.
+      redisWriteTimeout: 250
       # Path to a configuration file for the Web Application Firewall. The file must contain a
       # set of ModSecurity rules.
       modSecurityConf: "./modsec.conf"
@@ -573,110 +601,6 @@ worker:
   tolerations: []
 
   affinity: {}
-
-redis:
-  # The address of the Redis cluster.
-  name: redis-server
-  namespace: codesealer-system
-  replicaCount: 1
-  image: redis
-  tag: latest
-
-  service:
-    type: ClusterIP
-    name: redis
-    port: 6379
-    targetPort: 6379
-
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
-  ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
-    create: true
-    # # A base64 encoded PEM format certificate
-    # cert: ""
-    # # A base64 encoded PEM format private key
-    # key: ""
-    # Expiry time of CA in days for generated certs
-    expiration: 365
-
-  # admission secret with client certs mounted within the admission controller.
-  secret:
-    create: true
-    # name of the secret (auto-generated)
-    name: "codesealer-redis-tls"
-    type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    key: ""
-    # override via --set-file
-    # Annotations to add to admission secret. (Optional)
-    annotations: {}
-
-  config:
-    # If Redis Sentinel is used, this sets the master name
-    redisMaster: ""
-    # Username for redis
-    redisUser: "default"
-    # Password for redis
-    redisPassword: ""
-    # Whether to use TLS for redis connections
-    redisUseTLS: true
-    # The maximum number of Redis connections to pool. Note that this is per Worker
-    # instance, so keep this in mind if you are subject to connection limitations.
-    redisMaxConn: 100
-    # If 'true', TLS certificate errors for Redis will be ignored.
-    redisIgnoreTLS: false
-    # Redis connect timeout specified in milliseconds. Defaults to 50 if not set.
-    redisConnectTimeout: 50
-    # Redis read timeout specified in milliseconds. Defaults to 250 if not set.
-    redisReadTimeout: 250
-    # Redis write timeout specified in milliseconds. Defaults to 250 if not set.
-    redisWriteTimeout: 250
-
-  annotations: {}
-
-  labels: {}
-
-  selectorLabels: {}
-
-  podAnnotations: {}
-
-  podLabels: {}
-
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # autoscaling:
-  #   enabled: false
-  #   minReplicas: 1
-  #   maxReplicas: 100
-  #   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-  podSecurityContext: {}
-    # fsGroup: 2000
-
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
 
 serviceAccount:
   # Specifies whether a service account should be created

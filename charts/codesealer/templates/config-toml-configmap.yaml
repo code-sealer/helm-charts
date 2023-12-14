@@ -1,44 +1,3 @@
-{{- if empty .Values.redis.config.redisPassword }}
-apiVersion: v1
-kind: Secret
-metadata:
-  annotations:
-    "helm.sh/resource-policy": "keep"
-  labels:
-   {{- include "redis.labels" . | nindent 4 }}
-  name: "redis-secret"
-  namespace: {{ .Values.redis.namespace }}
-type: Opaque
-data:
-  # retrieve the secret data using lookup function and when not exists, return an empty dictionary / map as result
-  {{- $secretObj := (lookup "v1" "Secret" .Release.Namespace "redis-secret") | default dict }}
-  {{- $secretData := (get $secretObj "data") | default dict }}
-  # set $redisSecret to existing secret data or generate a random one when not exists
-  {{- $redisSecret := (get $secretData "redis-secret") | default (randAlphaNum 32 | b64enc) }}
-  redisPassword: {{ $redisSecret | quote }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.redis.name }}
-  labels:
-   {{- include "redis.labels" . | nindent 4 }}
-  namespace: {{ .Values.redis.namespace }}
-data:
-  #     ACL SETUSER {{ .Values.redis.config.redisUser }} on >{{ $redisSecret | b64dec }} allcommands allkeys
-  redis.conf: |+
-    cluster-enabled no
-    appendonly yes
-    protected-mode no
-    bind 0.0.0.0
-    port 0
-    requirepass {{ $redisSecret | b64dec }}
-    tls-port {{ .Values.redis.service.port }}
-    tls-auth-clients no
-    tls-cert-file /certs/tls.crt
-    tls-key-file /certs/tls.key
-    tls-ca-cert-file /certs/ca.crt
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -58,15 +17,15 @@ data:
 
     [[manager.backend]]
     backendID = {{ .Values.manager.config.backend.backendID | quote }}
-    redisAddress = ["{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local:{{ .Values.redis.service.port }}"]
-    redisMaster = {{ .Values.redis.config.redisMaster | quote }}
-    redisUser = {{ .Values.redis.config.redisUser | quote }}
-    redisPassword = {{ $redisSecret | b64dec | quote }}
-    redisUseTLS = {{ .Values.redis.config.redisUseTLS }}
-    redisIgnoreTLS = {{ .Values.redis.config.redisIgnoreTLS }}
-    redisConnectTimeout = {{ .Values.redis.config.redisConnectTimeout }}
-    redisReadTimeout = {{ .Values.redis.config.redisReadTimeout }}
-    redisWriteTimeout = {{ .Values.redis.config.redisWriteTimeout }}
+    redisAddress = ["{{ .Values.worker.redis.service.name }}.{{ .Values.worker.redis.namespace }}.svc.cluster.local:{{ .Values.worker.redis.service.port }}"]
+    redisMaster = {{ .Values.worker.config.bootloader.redisMaster | quote }}
+    redisUser = {{ .Values.worker.config.bootloader.redisUser | quote }}
+    redisPassword = {{ .Values.worker.config.bootloader.redisPassword | quote }}
+    redisUseTLS = {{ .Values.worker.config.bootloader.redisUseTLS }}
+    redisIgnoreTLS = {{ .Values.worker.config.bootloader.redisIgnoreTLS }}
+    redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
+    redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
+    redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
     influxAddress = {{ .Values.influxDB.influxAddress | quote }}
     influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
@@ -86,16 +45,16 @@ data:
     useProxyProtocol = {{ .Values.worker.config.network.useProxyProtocol }}
 
     [bootloader]
-    redisAddress = ["{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local:{{ .Values.redis.service.port }}"]
-    redisMaster = {{ .Values.redis.config.redisMaster | quote }}
-    redisUser = {{ .Values.redis.config.redisUser | quote }}
-    redisPassword = {{ $redisSecret | b64dec | quote }}
-    redisUseTLS = {{ .Values.redis.config.redisUseTLS }}
-    redisMaxConn = {{ .Values.redis.config.redisMaxConn }}
-    redisIgnoreTLS = {{ .Values.redis.config.redisIgnoreTLS }}
-    redisConnectTimeout = {{ .Values.redis.config.redisConnectTimeout }}
-    redisReadTimeout = {{ .Values.redis.config.redisReadTimeout }}
-    redisWriteTimeout = {{ .Values.redis.config.redisWriteTimeout }}
+    redisAddress = ["{{ .Values.worker.redis.service.name }}.{{ .Values.worker.redis.namespace }}.svc.cluster.local:{{ .Values.worker.redis.service.port }}"]
+    redisMaster = {{ .Values.worker.config.bootloader.redisMaster | quote }}
+    redisUser = {{ .Values.worker.config.bootloader.redisUser | quote }}
+    redisPassword = {{ .Values.worker.config.bootloader.redisPassword | quote }}
+    redisUseTLS = {{ .Values.worker.config.bootloader.redisUseTLS }}
+    redisMaxConn = {{ .Values.worker.config.bootloader.redisMaxConn }}
+    redisIgnoreTLS = {{ .Values.worker.config.bootloader.redisIgnoreTLS }}
+    redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
+    redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
+    redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
     influxAddress = {{ .Values.influxDB.influxAddress | quote }}
     influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
@@ -171,4 +130,3 @@ data:
     overrideMaxAge = {{ .Values.worker.config.endpoint.cacheRule.overrideMaxAge }}
     ignoreNoStore = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoStore }}
     ignoreNoCache = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoCache }}
-{{- end }}
