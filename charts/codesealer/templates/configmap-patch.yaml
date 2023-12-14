@@ -27,7 +27,7 @@ data:
             - /bin/sh
           args:
             - -c
-            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.config.endpoint.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
+            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.ingress.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
       containers:
         - name: {{ .Values.worker.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
@@ -40,7 +40,7 @@ data:
             - name: config-toml
               mountPath: /etc/codesealer-core/config.toml
               subPath: config.toml
-            - name: {{ .Values.worker.secret.name }}
+            - name: {{ .Values.redis.secret.name }}
               mountPath: /etc/codesealer-core/certs
               readOnly: true
             - name: modsec-conf
@@ -56,9 +56,9 @@ data:
         - name: config-toml
           configMap:
             name: config-toml
-        - name: {{ .Values.worker.secret.name }}
+        - name: {{ .Values.redis.secret.name }}
           secret:
-            secretName: {{ .Values.worker.secret.name }}
+            secretName: {{ .Values.redis.secret.name }}
         - name: modsec-conf
           configMap:
             name: modsec-conf

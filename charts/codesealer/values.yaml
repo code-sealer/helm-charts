@@ -15,6 +15,8 @@ imageCredentials:
 nameOverride: ""
 fullnameOverride: ""
 
+clusterDomain: cluster.local
+
 probes:
   initialDelaySeconds: 30
   timeoutSeconds: 5
@@ -169,6 +171,8 @@ worker:
   ingress:
     # Namespace where the Ingress Controller resides
     namespace: ingress-nginx
+    deployment: ingress-nginx-controller
+    port: 443
 
   service:
     type: ClusterIP
@@ -180,7 +184,7 @@ worker:
   ca:
     # disable if manually creating certs
     # provide cert and key via --set-file
-    create: true
+    create: false
     # # A base64 encoded PEM format certificate
     # cert: ""
     # # A base64 encoded PEM format private key
@@ -190,9 +194,9 @@ worker:
 
   # admission secret with client certs mounted within the admission controller.
   secret:
-    create: "true"
+    create: false
     # name of the secret (auto-generated)
-    name: codesealer-ingress-tls
+    name: codesealer-worker-tls
     type: kubernetes.io/tls
     # PEM format certificate (auto-generated)
     # override via --set-file
@@ -240,6 +244,8 @@ worker:
       remoteTimeout: 5
       # If true, the Worker will assume that the last entry in the last `X-Forwarded-For`
       # header is the actual client IP for use in logs and IP allow-lists for endpoints.
+      # Additionally the last field in X-Forwarded-Proto will be used to determine whether to
+      # set "Secure" on outgoing cookies.
       # Incompatible with 'network.useProxyProtocol'.
       behindProxy: false
       # When true, PROXY protocol will be enabled on the listening socket. Both version 1
@@ -262,8 +268,7 @@ worker:
       bootPrefix: "/~bl/"
       # This option can be set to 'true' in order to run the Worker in "standalone" mode. Each
       # endpoint can then be configured in this file (see the 'endpoint' section below), instead
-      # of configuring them through the Management Portal. In this mode, no coordination is
-      # done through Redis. This option is *not* recommended for production deployments.
+      # of configuring them through the Management Portal.
       fsEndpoints: true
       # Can be set to "redis" or "local". For "redis", state is shared amongst
       # workers through the configured Redis instance. With "local", state is stored
@@ -302,10 +307,11 @@ worker:
       # only process and protect requests that match the URL defined in this option - any
       # other requests will result in a `404 Not Found` response. Allowed values are URLs of
       # the form '<scheme>://<hostname or IP>[:port]' The scheme must be either `http` or
-      # `https`. The port is optional. Wildcards are allowed in the hostname.
-      # remoteIn = "hostScheme://hostname"
-      hostScheme: https
-      hostname: localhost
+      # `https`. The port is optional. A single leading `*` wildcard is allowed in the
+      # hostname.      
+      # remoteIn = "hostScheme://hostname:port"
+      inScheme: https
+      inHostname: localhost
       # This is the address where Codesealer will proxy requests to. Allowed values are URLs
       # of the form '<scheme>://<hostname or IP>[:port]' The scheme must be either `http` or
       # `https`. The port is optional.
@@ -314,7 +320,8 @@ worker:
       # request itself will not be altered - in particular, by default the `Hostname` header
       # will not be modified.
       # remoteOut = "https://127.0.0.1:port"
-      port: 443
+      outScheme: https
+      outHostname: 127.0.0.1
       # This list of scripts will select which scripts are protected. Only scripts that occur
       # in HTML '<script>' tags will be protected this way. The entries need to match the
       # 'src' attribute in corresponding '<script>' tags exactly. When 'endpoint.scriptOptOut'
@@ -464,6 +471,10 @@ worker:
       # ES6 modules are bundled into a single file by the worker. This option determines
       # wheter the resulting bundle should also be minified.
       minifyBundles: true
+      # When set to 'true' this option enables the HTTP cache feature for this endpoint. See
+      # the the 'cache' section for Worker specific settings and the 'endpoint.cacheRule'
+      # section for configuration of the cache rules.
+      cacheEnabled: false
 
       # The 'endpoint.proxyPathFilter' section defines a set of rules for selectively blocking
       # requests from being proxied. The rules are processed in order, such that firewall-like
@@ -480,10 +491,6 @@ worker:
       protectionPathFilter:
         bypass: false
         path: "/"
-        # When set to 'true' this option enables the HTTP cache feature for this endpoint. See
-        # the the 'cache' section for Worker specific settings and the 'endpoint.cacheRule'
-        # section for configuration of the cache rules.
-        cacheEnabled: false
 
       # The 'endpoint.scriptReplace' section defines a set of rules for simple search and
       # replace in all scripts protected by Codesealer.
@@ -573,7 +580,7 @@ redis:
   namespace: codesealer-system
   replicaCount: 1
   image: redis
-  tag: 6
+  tag: latest
 
   service:
     type: ClusterIP
@@ -581,7 +588,44 @@ redis:
     port: 6379
     targetPort: 6379
 
+  # admission CA can be used to override the Certs that will be used
+  # to sign the keys used by the admission operator.
+  ca:
+    # disable if manually creating certs
+    # provide cert and key via --set-file
+    create: true
+    # # A base64 encoded PEM format certificate
+    # cert: ""
+    # # A base64 encoded PEM format private key
+    # key: ""
+    # Expiry time of CA in days for generated certs
+    expiration: 365
+
+  # admission secret with client certs mounted within the admission controller.
+  secret:
+    create: true
+    # name of the secret (auto-generated)
+    name: "codesealer-redis-tls"
+    type: kubernetes.io/tls
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    cert: ""
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    key: ""
+    # override via --set-file
+    # Annotations to add to admission secret. (Optional)
+    annotations: {}
+
   config:
+    # If Redis Sentinel is used, this sets the master name
+    redisMaster: ""
+    # Username for redis
+    redisUser: "default"
+    # Password for redis
+    redisPassword: ""
+    # Whether to use TLS for redis connections
+    redisUseTLS: true
     # The maximum number of Redis connections to pool. Note that this is per Worker
     # instance, so keep this in mind if you are subject to connection limitations.
     redisMaxConn: 100
@@ -593,7 +637,6 @@ redis:
     redisReadTimeout: 250
     # Redis write timeout specified in milliseconds. Defaults to 250 if not set.
     redisWriteTimeout: 250
-
 
   annotations: {}
 
@@ -634,6 +677,17 @@ redis:
     # readOnlyRootFilesystem: true
     # runAsNonRoot: true
     # runAsUser: 1000
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
 
 manager:
   name: core-manager
@@ -718,9 +772,9 @@ manager:
   #   - name: core-manager-data
   #     persistentVolumeClaim:
   #       claimName: core-manager-pv-claim
-  #   - name: codesealer-ingress-tls
+  #   - name: codesealer-worker-tls
   #     secret:
-  #       secretName: codesealer-ingress-tls
+  #       secretName: codesealer-worker-tls
 
   # Additional volumeMounts on the output Deployment definition.
   # volumeMounts:
@@ -731,7 +785,7 @@ manager:
   #     mountPath: /var/lib/core-manager
   #     readOnly: false
   #   - mountPath: /etc/core-manager
-  #     name: codesealer-ingress-tls
+  #     name: codesealer-worker-tls
   #     readOnly: true
 
   podSecurityContext: {}
@@ -750,17 +804,6 @@ manager:
   tolerations: []
 
   affinity: {}
-
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
 
 service:
   type: ClusterIP
@@ -783,9 +826,9 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-   - secretName: core-manager-tls
+   - secretName: ingress-tls
      hosts:
-       - core-manager.local
+       - localhost
 
   labels: {}
 
@@ -806,7 +849,7 @@ ingress:
   secret:
     create: "true"
     # name of the secret (auto-generated)
-    name: core-manager-tls
+    name: ingress-tls
     type: kubernetes.io/tls
     # PEM format certificate (auto-generated)
     # override via --set-file

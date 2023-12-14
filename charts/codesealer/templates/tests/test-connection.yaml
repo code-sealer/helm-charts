@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "ingress.serviceName" . }}:{{ .Values.service.port }}']
+      args: ['{{ include "ingress.serviceName" . }}:{{ .Values.worker.ingress.port }}']
   restartPolicy: Never
