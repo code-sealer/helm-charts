@@ -1,3 +1,44 @@
+{{- if empty .Values.redis.config.redisPassword }}
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    "helm.sh/resource-policy": "keep"
+  labels:
+   {{- include "redis.labels" . | nindent 4 }}
+  name: "redis-secret"
+  namespace: {{ .Values.redis.namespace }}
+type: Opaque
+data:
+  # retrieve the secret data using lookup function and when not exists, return an empty dictionary / map as result
+  {{- $secretObj := (lookup "v1" "Secret" .Release.Namespace "redis-secret") | default dict }}
+  {{- $secretData := (get $secretObj "data") | default dict }}
+  # set $redisSecret to existing secret data or generate a random one when not exists
+  {{- $redisSecret := (get $secretData "redis-secret") | default (randAlphaNum 32 | b64enc) }}
+  redisPassword: {{ $redisSecret | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.redis.name }}
+  labels:
+   {{- include "redis.labels" . | nindent 4 }}
+  namespace: {{ .Values.redis.namespace }}
+data:
+  #     ACL SETUSER {{ .Values.redis.config.redisUser }} on >{{ $redisSecret | b64dec }} allcommands allkeys
+  redis.conf: |+
+    cluster-enabled no
+    appendonly yes
+    protected-mode no
+    bind 0.0.0.0
+    port 0
+    requirepass {{ $redisSecret | b64dec }}
+    tls-port {{ .Values.redis.service.port }}
+    tls-auth-clients no
+    tls-cert-file /certs/tls.crt
+    tls-key-file /certs/tls.key
+    tls-ca-cert-file /certs/ca.crt
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,12 +48,35 @@ metadata:
   namespace: {{ .Values.worker.ingress.namespace }}
 data:
   config.toml: |
+    [manager]
+    listen = "0.0.0.0:{{ .Values.manager.config.listen }}"
+    tls = {{ .Values.manager.config.tls }}
+    certFile = {{ .Values.manager.config.certFile | quote }}
+    keyFile = {{ .Values.manager.config.keyFile | quote }}
+    letsEncrypt = {{ .Values.manager.config.letsEncrypt }}
+    letsEncryptDomain = {{ .Values.manager.config.letsEncryptDomain | quote }}
+
+    [[manager.backend]]
+    backendID = {{ .Values.manager.config.backend.backendID | quote }}
+    redisAddress = ["{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local:{{ .Values.redis.service.port }}"]
+    redisMaster = {{ .Values.redis.config.redisMaster | quote }}
+    redisUser = {{ .Values.redis.config.redisUser | quote }}
+    redisPassword = {{ $redisSecret | b64dec | quote }}
+    redisUseTLS = {{ .Values.redis.config.redisUseTLS }}
+    redisIgnoreTLS = {{ .Values.redis.config.redisIgnoreTLS }}
+    redisConnectTimeout = {{ .Values.redis.config.redisConnectTimeout }}
+    redisReadTimeout = {{ .Values.redis.config.redisReadTimeout }}
+    redisWriteTimeout = {{ .Values.redis.config.redisWriteTimeout }}
+    influxAddress = {{ .Values.influxDB.influxAddress | quote }}
+    influxToken = {{ .Values.influxDB.influxToken | quote }}
+    influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
+
     [network]
     listen = "0.0.0.0:{{ .Values.worker.config.network.listen }}"
     tls = {{ .Values.worker.config.network.tls }}
-    tlsMinVersion = "{{ .Values.worker.config.network.tlsMinVersion }}"
-    certFile = "{{ .Values.worker.config.network.certFile }}"
-    keyFile = "{{ .Values.worker.config.network.keyFile }}"
+    tlsMinVersion = {{ .Values.worker.config.network.tlsMinVersion | quote }}
+    certFile = {{ .Values.worker.config.network.certFile | quote }}
+    keyFile = {{ .Values.worker.config.network.keyFile | quote }}
     letsEncrypt = {{ .Values.worker.config.network.letsEncrypt }}
     ignoreTLS = {{ .Values.worker.config.network.ignoreTLS }}
     disallowLocal = {{ .Values.worker.config.network.disallowLocal }}
@@ -22,35 +86,38 @@ data:
     useProxyProtocol = {{ .Values.worker.config.network.useProxyProtocol }}
 
     [bootloader]
-    redisAddress = "redis://{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local"
+    redisAddress = ["{{ .Values.redis.name }}.{{ .Values.redis.namespace }}.svc.cluster.local:{{ .Values.redis.service.port }}"]
+    redisMaster = {{ .Values.redis.config.redisMaster | quote }}
+    redisUser = {{ .Values.redis.config.redisUser | quote }}
+    redisPassword = {{ $redisSecret | b64dec | quote }}
+    redisUseTLS = {{ .Values.redis.config.redisUseTLS }}
     redisMaxConn = {{ .Values.redis.config.redisMaxConn }}
     redisIgnoreTLS = {{ .Values.redis.config.redisIgnoreTLS }}
     redisConnectTimeout = {{ .Values.redis.config.redisConnectTimeout }}
     redisReadTimeout = {{ .Values.redis.config.redisReadTimeout }}
     redisWriteTimeout = {{ .Values.redis.config.redisWriteTimeout }}
-    influxAddress = "{{ .Values.influxDB.influxAddress }}"
-    influxToken = "{{ .Values.influxDB.influxToken }}"
+    influxAddress = {{ .Values.influxDB.influxAddress | quote }}
+    influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
-    modSecurityConf = "{{ .Values.worker.config.bootloader.modSecurityConf }}"
-    bootPrefix = "{{ .Values.worker.config.bootloader.bootPrefix }}"
+    modSecurityConf = {{ .Values.worker.config.bootloader.modSecurityConf | quote }}
     fsEndpoints = {{ .Values.worker.config.bootloader.fsEndpoints }}
-    sessionBackend = "{{ .Values.worker.config.bootloader.sessionBackend }}"
+    sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}
 
     [cache]
-    folder = "{{ .Values.worker.config.cache.folder }}"
+    folder = {{ .Values.worker.config.cache.folder | quote }}
     maxFileSize = {{ .Values.worker.config.cache.maxFileSize }}
     maxSize = {{ .Values.worker.config.cache.maxSize }}
 
     [[endpoint]]
     disable = {{ .Values.worker.config.endpoint.disable }}
-    remoteIn = "{{ .Values.worker.config.endpoint.hostScheme }}://{{ .Values.worker.config.endpoint.hostname }}"
-    remoteOut = "https://127.0.0.1:{{ .Values.worker.config.endpoint.port }}"
+    remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.port }}"
+    remoteOut = "{{ .Values.worker.config.endpoint.outScheme }}://{{ .Values.worker.config.endpoint.outHostname }}:{{ .Values.worker.ingress.port }}"
     scriptOptIn = {{ .Values.worker.config.endpoint.scriptOptIn }}
     scriptOptOut = {{ .Values.worker.config.endpoint.scriptOptOut }}
     ignoreRemoteTLS = {{ .Values.worker.config.endpoint.ignoreRemoteTLS }}
     letsEncrypt = {{ .Values.worker.config.endpoint.letsEncrypt }}
-    tlsCertPath = "{{ .Values.worker.config.endpoint.tlsCertPath }}"
-    tlsKeyPath = "{{ .Values.worker.config.endpoint.tlsKeyPath }}"
+    tlsCertPath = {{ .Values.worker.config.endpoint.tlsCertPath | quote }}
+    tlsKeyPath = {{ .Values.worker.config.endpoint.tlsKeyPath | quote }}
     autoXhr = {{ .Values.worker.config.endpoint.autoXhr }}
     exposeXhrWindow = {{ .Values.worker.config.endpoint.exposeXhrWindow }}
     protectDynamicContent = {{ .Values.worker.config.endpoint.protectDynamicContent }}
@@ -61,8 +128,8 @@ data:
     enableWaf = {{ .Values.worker.config.endpoint.enableWaf }}
     wafFullTransaction = {{ .Values.worker.config.endpoint.wafFullTransaction }}
     wafMonitorMode = {{ .Values.worker.config.endpoint.wafMonitorMode }}
-    SNIOverwrite = "{{ .Values.worker.config.endpoint.SNIOverwrite }}"
-    HostnameOverwrite = "{{ .Values.worker.config.endpoint.HostnameOverwrite }}"
+    SNIOverwrite = {{ .Values.worker.config.endpoint.SNIOverwrite | quote }}
+    HostnameOverwrite = {{ .Values.worker.config.endpoint.HostnameOverwrite | quote }}
     invalidHTMLCompat = {{ .Values.worker.config.endpoint.invalidHTMLCompat }}
     bodyOnloadCompat = {{ .Values.worker.config.endpoint.bodyOnloadCompat }}
     strictSession = {{ .Values.worker.config.endpoint.strictSession }}
@@ -81,26 +148,27 @@ data:
     invertIPBypassList = {{ .Values.worker.config.endpoint.invertIPBypassList }}
     ipAccessList = {{ .Values.worker.config.endpoint.ipAccessList }}
     exposeJSVars = {{ .Values.worker.config.endpoint.exposeJSVars }}
-    scriptPreamble = "{{ .Values.worker.config.endpoint.scriptPreamble }}"
-    scriptPostamble = "{{ .Values.worker.config.endpoint.scriptPostamble }}"
+    scriptPreamble = {{ .Values.worker.config.endpoint.scriptPreamble | quote }}
+    scriptPostamble = {{ .Values.worker.config.endpoint.scriptPostamble | quote }}
     minifyBundles = {{ .Values.worker.config.endpoint.minifyBundles }}
+    cacheEnabled = {{ .Values.worker.config.endpoint.cacheEnabled }}
 
     [[endpoint.proxyPathFilter]]
     block = {{ .Values.worker.config.endpoint.proxyPathFilter.block }}
-    path = "{{ .Values.worker.config.endpoint.proxyPathFilter.path }}"
+    path = {{ .Values.worker.config.endpoint.proxyPathFilter.path | quote }}
 
     [[endpoint.protectionPathFilter]]
     bypass = {{ .Values.worker.config.endpoint.protectionPathFilter.bypass }}
-    path = "{{ .Values.worker.config.endpoint.protectionPathFilter.path }}"
-    cacheEnabled = {{ .Values.worker.config.endpoint.protectionPathFilter.cacheEnabled }}
+    path = {{ .Values.worker.config.endpoint.protectionPathFilter.path | quote }}
 
     [[endpoint.scriptReplace]]
-    to = "{{ .Values.worker.config.endpoint.scriptReplace.to }}"
-    from = "{{ .Values.worker.config.endpoint.scriptReplace.from }}"
+    to = {{ .Values.worker.config.endpoint.scriptReplace.to | quote }}
+    from = {{ .Values.worker.config.endpoint.scriptReplace.from | quote }}
 
     [[endpoint.cacheRule]]
-    contentType = "{{ .Values.worker.config.endpoint.cacheRule.contentType }}"
-    path = "{{ .Values.worker.config.endpoint.cacheRule.path }}"
+    contentType = {{ .Values.worker.config.endpoint.cacheRule.contentType | quote }}
+    path = {{ .Values.worker.config.endpoint.cacheRule.path | quote }}
     overrideMaxAge = {{ .Values.worker.config.endpoint.cacheRule.overrideMaxAge }}
     ignoreNoStore = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoStore }}
     ignoreNoCache = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoCache }}
+{{- end }}
