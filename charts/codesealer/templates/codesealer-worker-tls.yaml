@@ -1,16 +1,16 @@
-{{ $tls := fromYaml ( include "redis.gen-certs" . ) }}
-{{- if .Values.redis.secret.create }}
+{{ $tls := fromYaml ( include "worker.gen-certs" . ) }}
+{{- if .Values.worker.secret.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}  
-  name: {{ .Values.redis.secret.name }}
+  name: {{ .Values.worker.secret.name }}
   namespace: {{ .Values.worker.ingress.namespace }}
-type: {{ .Values.redis.secret.type }}
+type: {{ .Values.worker.secret.type }}
 data:
-  # Cert for {{ include "redis.service.fullname" . }}
+  # Cert for {{ include "worker.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}
   tls.key: {{ $tls.clientKey }}
   ca.crt: {{ $tls.caCert }}

@@ -165,31 +165,43 @@ clientKey: {{ $clientKey }}
 {{- end -}}
 
 {{/*
-Name of the redis service
+Create the name of the Redis service to use
 */}}
-{{- define "redis.name" -}}
-{{- default .Values.redis.name | trunc 63 | trimSuffix "-" }}
+{{- define "worker.serviceName" -}}
+{{- .Values.worker.redis.service.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Redis labels
+Create service fully qualified hostname for the Redis service
 */}}
-{{- define "redis.labels" -}}
-helm.sh/chart: {{ include "codesealer.chart" . }}
-{{ include "redis.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- define "worker.service.fullname" -}}
+{{- default ( printf "%s.%s.svc.cluster.local" (include "worker.serviceName" .) .Values.worker.redis.namespace ) }}
 {{- end }}
 
 {{/*
-Redis Selector labels
+Generate worker certificate authority to connect to Redis
 */}}
-{{- define "redis.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "redis.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- define "worker.gen-certs" -}}
+{{- $expiration := (.Values.worker.ca.expiration | int) -}}
+{{- if (or (empty .Values.worker.ca.cert) (empty .Values.worker.ca.key)) -}}
+{{- $ca :=  genCA "redis-ca" $expiration -}}
+{{- template "worker.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate worker client key and cert from CA  to connect to Redis
+*/}}
+{{- define "worker.gen-client-tls" -}}
+{{- $altNames := list ( include "worker.service.fullname" .RootScope) (printf "*.%s" ( include "worker.service.fullname" .RootScope)) "127.0.0.1" "localhost" -}}
+{{- $expiration := (.RootScope.Values.worker.ca.expiration | int) -}}
+{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
+{{- $clientCert := $cert.Cert | b64enc -}}
+{{- $clientKey := $cert.Key | b64enc -}}
+caCert: {{ .CA.Cert | b64enc }}
+clientCert: {{ $clientCert }}
+clientKey: {{ $clientKey }}
+{{- end -}}
 
 {{/*
 Create the name of the service to use
@@ -224,45 +236,6 @@ Generate Ingress client key and cert from CA
 {{- define "ingress.gen-client-tls" -}}
 {{- $altNames := list ( include "ingress.service.fullname" .RootScope) -}}
 {{- $expiration := (.RootScope.Values.ingress.ca.expiration | int) -}}
-{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
-{{- $clientCert := $cert.Cert | b64enc -}}
-{{- $clientKey := $cert.Key | b64enc -}}
-caCert: {{ .CA.Cert | b64enc }}
-clientCert: {{ $clientCert }}
-clientKey: {{ $clientKey }}
-{{- end -}}
-
-{{/*
-Create the name of the service to use
-*/}}
-{{- define "worker.serviceName" -}}
-{{- .Values.worker.config.endpoint.hostname | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create service fully qualified hostname
-*/}}
-{{- define "worker.service.fullname" -}}
-{{- default ( printf "%s" (include "worker.serviceName" .) ) }}
-{{- end }}
-
-{{/*
-Generate Worker certificate authority
-*/}}
-{{- define "worker.gen-certs" -}}
-{{- $expiration := (.Values.worker.ca.expiration | int) -}}
-{{- if (or (empty .Values.worker.ca.cert) (empty .Values.worker.ca.key)) -}}
-{{- $ca :=  genCA "worker-ca" $expiration -}}
-{{- template "worker.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Generate Worker client key and cert from CA
-*/}}
-{{- define "worker.gen-client-tls" -}}
-{{- $altNames := list ( include "worker.service.fullname" .RootScope) -}}
-{{- $expiration := (.RootScope.Values.worker.ca.expiration | int) -}}
 {{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
 {{- $clientCert := $cert.Cert | b64enc -}}
 {{- $clientKey := $cert.Key | b64enc -}}
