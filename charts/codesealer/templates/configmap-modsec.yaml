@@ -11,28 +11,128 @@ data:
 
     # OWASP CRS v3 rules
     Include modsecurity/crs-setup.conf
+    {{- if .Values.worker.config.endpoint.rules.rules900.enabled }}
+    Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    {{ else }}
     # Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules901.enabled }}
     Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules905.enabled }}
     Include modsecurity/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules910.enabled }}
     Include modsecurity/rules/REQUEST-910-IP-REPUTATION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-910-IP-REPUTATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules911.enabled }}
     Include modsecurity/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules912.enabled }}
     Include modsecurity/rules/REQUEST-912-DOS-PROTECTION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-912-DOS-PROTECTION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules913.enabled }}
     Include modsecurity/rules/REQUEST-913-SCANNER-DETECTION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-913-SCANNER-DETECTION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules920.enabled }}
     Include modsecurity/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules921.enabled }}
     Include modsecurity/rules/REQUEST-921-PROTOCOL-ATTACK.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-921-PROTOCOL-ATTACK.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules930.enabled }}
     Include modsecurity/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules932.enabled }}
     Include modsecurity/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules932.enabled }}
     Include modsecurity/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules933.enabled }}
     Include modsecurity/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules941.enabled }}
     Include modsecurity/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules942.enabled }}
     Include modsecurity/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules943.enabled }}
     Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules949.enabled }}
     Include modsecurity/rules/REQUEST-949-BLOCKING-EVALUATION.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-949-BLOCKING-EVALUATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules950.enabled }}
     Include modsecurity/rules/RESPONSE-950-DATA-LEAKAGES.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-950-DATA-LEAKAGES.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules951.enabled }}
     Include modsecurity/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules952.enabled }}
     Include modsecurity/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules953.enabled }}
     Include modsecurity/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules954.enabled }}
     Include modsecurity/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules959.enabled }}
     Include modsecurity/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules980.enabled }}
     Include modsecurity/rules/RESPONSE-980-CORRELATION.conf
+    {{ else }}
+    # Include modsecurity/rules/RESPONSE-980-CORRELATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules999.enabled }}
+    Include modsecurity/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+    {{ else }}
     # Include modsecurity/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+    {{- end }}

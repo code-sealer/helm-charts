@@ -115,7 +115,7 @@ if [[ "$1" == "install" ]]; then
     --set worker.config.endpoint.wafMonitorMode=false \
     --set worker.config.endpoint.enableWaf=true \
     --set worker.config.endpoint.wafFullTransaction=true \
-    --set worker.config.endpoint.paranoiaLevel=1 \
+    --set worker.config.endpoint.crs.paranoiaLevel=1 \
     --wait --timeout=90s
 
     # --set worker.config.endpoint.hostScheme=https \
@@ -215,7 +215,7 @@ elif [[ "$1" == "upgrade" ]]; then
     --set worker.config.endpoint.wafMonitorMode=false \
     --set worker.config.endpoint.enableWaf=true \
     --set worker.config.endpoint.wafFullTransaction=true \
-    --set worker.config.endpoint.paranoiaLevel=1 \
+    --set worker.config.endpoint.crs.paranoiaLevel=1 \
     --wait --timeout=90s
 
   echo "\n########################################################################################"
