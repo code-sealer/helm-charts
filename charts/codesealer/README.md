@@ -28,12 +28,21 @@ command:
 ```bash
 helm upgrade --install ingress-nginx ingress-nginx \
   --repo https://kubernetes.github.io/ingress-nginx \
-  --namespace ingress-nginx --create-namespace \
-  --set controller.hostPort.enabled=true \
-  --set controller.service.type=LoadBalancer \
-  --set controller.publishService.enabled=false \
-  --set controller.extraArgs.publish-status-address=localhost
+  --namespace ingress-nginx --create-namespace
 ```
+
+> NOTE: If using Kind, install the Ingress using the following variation
+>
+> ```bash
+> helm upgrade --install ingress-nginx ingress-nginx \
+>   --repo https://kubernetes.github.io/ingress-nginx \
+>   --namespace ingress-nginx --create-namespace \
+>   --set controller.hostPort.enabled=true \
+>   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1
+> ```
+>
+> See also the notes on Kind in the ["Kubernetes Implementation
+> Specifics"](#kubernetes-implementation-specifics) section.
 
 ### Target Application
 
@@ -83,15 +92,8 @@ kubectl label ns $INGRESS_NAMESPACE codesealer.com/webhook=enabled
 kubectl patch deployment $INGRESS_DEPLOYMENT -n $INGRESS_NAMESPACE -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
 ```
 
-Finally, restart your ingress deployment:
-
-```bash
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=0
-sleep 20
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=1
-```
-
-Codesealer will not automatically protect your application.
+Your ingress pods should now restart and have Codesealer sidecars running with them.
+Codesealer will now automatically protect your application.
 
 ## Upgrading
 
@@ -117,9 +119,8 @@ Finally, set the `INGRESS_NAMESPACE` and `INGRESS_DEPLOYMENT` variables to match
 target ingress and restart your ingress deployment:
 
 ```bash
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=0
-sleep 20
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=1
+kubectl rollout restart deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE
+kubectl rollout status deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE
 ```
 
 ## Uninstalling
