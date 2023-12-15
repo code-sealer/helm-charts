@@ -188,7 +188,7 @@ data:
       nolog,\
       pass,\
       t:none,\
-      setvar:tx.paranoia_level={{ .Values.worker.config.endpoint.paranoiaLevel }}"
+      setvar:tx.paranoia_level={{ .Values.worker.config.endpoint.crs.paranoiaLevel }}"
 
 
     # It is possible to execute rules from a higher paranoia level but not include
@@ -214,7 +214,7 @@ data:
       nolog,\
       pass,\
       t:none,\
-      setvar:tx.executing_paranoia_level={{ .Values.worker.config.endpoint.executing_paranoia_level }}"
+      setvar:tx.executing_paranoia_level={{ .Values.worker.config.endpoint.crs.executing_paranoia_level }}"
 
 
     #
@@ -232,13 +232,13 @@ data:
     #
     # Uncomment this rule to change the default:
     #
-    #SecAction \
-    #  "id:900010,\
-    #   phase:1,\
-    #   nolog,\
-    #   pass,\
-    #   t:none,\
-    #   setvar:tx.enforce_bodyproc_urlencoded=1"
+    SecAction \
+     "id:900010,\
+      phase:1,\
+      nolog,\
+      pass,\
+      t:none,\
+      setvar:tx.enforce_bodyproc_urlencoded={{ .Values.worker.config.endpoint.crs.enforce_bodyproc_urlencoded }}"
 
 
     #
@@ -265,16 +265,16 @@ data:
     # In general, 'phase:request' is used. However, we want to make absolutely sure
     # that all configuration variables are set before the CRS rules are processed.)
     #
-    #SecAction \
-    # "id:900100,\
-    #  phase:1,\
-    #  nolog,\
-    #  pass,\
-    #  t:none,\
-    #  setvar:tx.critical_anomaly_score=5,\
-    #  setvar:tx.error_anomaly_score=4,\
-    #  setvar:tx.warning_anomaly_score=3,\
-    #  setvar:tx.notice_anomaly_score=2"
+    SecAction \
+    "id:900100,\
+     phase:1,\
+     nolog,\
+     pass,\
+     t:none,\
+     setvar:tx.critical_anomaly_score={{ .Values.worker.config.endpoint.crs.critical_anomaly_score }},\
+     setvar:tx.error_anomaly_score={{ .Values.worker.config.endpoint.crs.error_anomaly_score }},\
+     setvar:tx.warning_anomaly_score={{ .Values.worker.config.endpoint.crs.warning_anomaly_score }},\
+     setvar:tx.notice_anomaly_score={{ .Values.worker.config.endpoint.crs.notice_anomaly_score }}"
 
 
     #
@@ -317,14 +317,14 @@ data:
     #
     # Uncomment this rule to change the defaults:
     #
-    #SecAction \
-    # "id:900110,\
-    #  phase:1,\
-    #  nolog,\
-    #  pass,\
-    #  t:none,\
-    #  setvar:tx.inbound_anomaly_score_threshold=5,\
-    #  setvar:tx.outbound_anomaly_score_threshold=4"
+    SecAction \
+    "id:900110,\
+     phase:1,\
+     nolog,\
+     pass,\
+     t:none,\
+     setvar:tx.inbound_anomaly_score_threshold={{ .Values.worker.config.endpoint.crs.inbound_anomaly_score_threshold }},\
+     setvar:tx.outbound_anomaly_score_threshold={{ .Values.worker.config.endpoint.crs.outbound_anomaly_score_threshold }}"
 
     #
     # -- [[ Application Specific Rule Exclusions ]] ----------------------------------------
@@ -695,13 +695,13 @@ data:
     #
     # Uncomment this rule to use this feature:
     #
-    #SecAction \
+    # SecAction \
     # "id:900600,\
     #  phase:1,\
     #  nolog,\
     #  pass,\
     #  t:none,\
-    #  setvar:'tx.high_risk_country_codes='"
+    #  setvar:'tx.high_risk_country_codes={{ .Values.worker.config.endpoint.crs.high_risk_country_codes }}'"
 
 
     #
@@ -815,7 +815,7 @@ data:
 
     # Please keep this directive uncommented.
     # Default: 600 (10 minutes)
-    SecCollectionTimeout 600
+    SecCollectionTimeout {{ .Values.worker.config.endpoint.crs.SecCollectionTimeout}}
 
 
     #
