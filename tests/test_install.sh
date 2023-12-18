@@ -52,6 +52,7 @@ if [[ "$1" == "install" ]]; then
     --repo https://kubernetes.github.io/ingress-nginx \
     --namespace ${INGRESS_NAMESPACE} --create-namespace \
     --set controller.hostPort.enabled=true \
+    --set controller.updateStrategy.rollingUpdate.maxUnavailable=1  \
     --set controller.service.type=LoadBalancer \
     --set controller.publishService.enabled=false \
     --set controller.extraArgs.publish-status-address=localhost \
