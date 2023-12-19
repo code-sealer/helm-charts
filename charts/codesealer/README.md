@@ -71,7 +71,7 @@ Codesealer requires Redis. If you don't have your own implementation of Redis yo
 using the following command:
 
 ```bash
-    helm install redis-${RELEASE_VER} oci://registry-1.docker.io/bitnamicharts/redis \
+    helm install redis oci://registry-1.docker.io/bitnamicharts/redis \
     --namespace ${REDIS_NAMESPACE} --create-namespace \
     --set auth.enabled=true \
     --set replica.replicaCount=1 \
@@ -82,7 +82,7 @@ You will need the Redis generated password to install Codesealer.  You can get t
 the following command:
 
 ```bash
-export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis-${RELEASE_VER} -o jsonpath="{.data.redis-password}" | base64 -d)
+export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
 ```
 
 ## Installing
@@ -97,12 +97,7 @@ helm install codesealer codesealer/codesealer --create-namespace --namespace cod
     --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
     --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
     --set worker.ingress.port=${INGRESS_PORT} \
-    --set image.pullPolicy=Always \
-    --set worker.redis.service.name=redis-${RELEASE_VER}-master \
-    --set worker.config.bootloader.redisUser=default \
     --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-    --set worker.config.bootloader.redisUseTLS=false \
-    --set worker.config.bootloader.redisIgnoreTLS=true \
     --wait --timeout=90s
 ```
 
@@ -118,9 +113,8 @@ kubectl patch deployment $INGRESS_DEPLOYMENT -n $INGRESS_NAMESPACE -p '{"spec": 
 Finally, restart your ingress deployment:
 
 ```bash
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=0
-sleep 20
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=1
+kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
+kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
 Codesealer will not automatically protect your application.
@@ -131,7 +125,7 @@ You will need the Redis generated password to upgrade Codesealer.  You can get t
 the following command:
 
 ```bash
-export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis-${RELEASE_VER} -o jsonpath="{.data.redis-password}" | base64 -d)
+export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
 ```
 
 To upgrade an existing release, set the `INGRESS_NAMESPACE` variable to match your
@@ -142,12 +136,7 @@ helm repo update codesealer
 helm upgrade codesealer codesealer/codesealer --namespace codesealer-system \
   --set codesealerToken=${CODESEALER_TOKEN} \
   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
-  --set image.pullPolicy=Always \
-  --set worker.redis.service.name=redis-${RELEASE_VER}-master \
-  --set worker.config.bootloader.redisUser=default \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set worker.config.bootloader.redisUseTLS=false \
-  --set worker.config.bootloader.redisIgnoreTLS=true \
   --wait --timeout=90s
 ```
 
@@ -162,9 +151,8 @@ Finally, set the `INGRESS_NAMESPACE` and `INGRESS_DEPLOYMENT` variables to match
 target ingress and restart your ingress deployment:
 
 ```bash
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=0
-sleep 20
-kubectl scale deployment $INGRESS_DEPLOYMENT --namespace $INGRESS_NAMESPACE --replicas=1
+kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
+kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
 ## Uninstalling
