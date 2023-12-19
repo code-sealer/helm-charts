@@ -701,7 +701,7 @@ data:
     #  nolog,\
     #  pass,\
     #  t:none,\
-    #  setvar:'tx.high_risk_country_codes={{ .Values.worker.config.endpoint.crs.high_risk_country_codes }}'"
+    #  setvar:'tx.high_risk_country_codes='"
 
 
     #
