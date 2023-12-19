@@ -4,7 +4,7 @@
 
 image:
   repository: ghcr.io/code-sealer
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets:
   - name: regcred
@@ -805,6 +805,7 @@ serviceAccount:
   name: ""
 
 manager:
+  enabled: false
   name: core-manager
   replicaCount: 1
   restartPolicy: Always

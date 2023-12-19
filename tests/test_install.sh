@@ -48,7 +48,7 @@ if [[ "$1" == "install" ]]; then
     helm upgrade --install ingress-nginx ingress-nginx \
     --repo https://kubernetes.github.io/ingress-nginx \
     --namespace ${INGRESS_NAMESPACE} --create-namespace \
-    --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
+    --set controller.updateStrategy.rollingUpdate.maxUnavailable=1  \
     --set controller.hostPort.enabled=true \
     --wait --timeout=60s
   else
@@ -118,42 +118,65 @@ if [[ "$1" == "install" ]]; then
 
   # Get the Redis password
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
+  read -r -p 'Which installation mode for Codesealer [hybrid/standalone]: '
   echo "########################################################################################"
   echo "# Redis password: ${REDIS_PASSWORD}"
   echo "# "
-  echo "# Waiting for Codesealer to start"
-  echo "########################################################################################"      
-  helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
-    --set codesealerToken="${CODESEALER_TOKEN}" \
-    --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
-    --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
-    --set worker.ingress.port=${INGRESS_PORT} \
-    --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-    --wait --timeout=90s
+  echo "# Waiting for Codesealer to startin ${REPLY} mode"
+  echo "########################################################################################"
+  if [[ "${REPLY}" == "hybrid" ]]; then
+    # Start Codesealer in `hybrid` mode
+    helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
+      --set codesealerToken="${CODESEALER_TOKEN}" \
+      --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+      --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+      --set worker.ingress.port=${INGRESS_PORT} \
+      --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+      --wait --timeout=90s
 
-  echo "########################################################################################"
-  echo "#  Activate Codesealer by applying labels and annotations:"
-  echo "# "
-  echo "# $ kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled"
-  echo "# "
-  echo "# $ kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'"
-  echo "# "
-  echo "########################################################################################"
-  read -r -s -p 'Press any key to continue.'
+    echo "########################################################################################"
+    echo "#  Activate Codesealer by applying labels and annotations:"
+    echo "# "
+    echo "# $ kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled"
+    echo "# "
+    echo "# $ kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'"
+    echo "# "
+    echo "########################################################################################"
+    read -r -s -p 'Press any key to continue.'
 
-  kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled
-  kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
-  
-  echo "########################################################################################"
-  echo "#  Restart NGINX Ingress Controller"
-  echo "########################################################################################"
-  read -r -s -p 'Press any key to continue.'
+    kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled
+    kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
+    
+    echo "########################################################################################"
+    echo "#  Restart NGINX Ingress Controller"
+    echo "########################################################################################"
+    read -r -s -p 'Press any key to continue.'
 
-  kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
-  echo "########################################################################################"
-  echo "#  Waiting for NGINX Ingress Controller to restart"
-  echo "########################################################################################"
-  kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
+    kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
+    echo "########################################################################################"
+    echo "#  Waiting for NGINX Ingress Controller to restart"
+    echo "########################################################################################"  
+    kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
+
+  elif [[ "${REPLY}" == "standalone" ]]; then
+    # Start Codesealer in `standalone` mode
+    helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
+      --set codesealerToken="${CODESEALER_TOKEN}" \
+      --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+      --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+      --set worker.ingress.port=${INGRESS_PORT} \
+      --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+      --set worker.config.bootloader.fsEndpoints=false \
+      --set manager.enabled=true \
+      --set ingress.enabled=true \
+      --wait --timeout=90s
+  else
+    echo "####################################################################################################################"
+    echo "#  Invalid arguement!"
+    echo "#  Must specify: [hybrid | standalone]"
+    echo "####################################################################################################################"
+    exit 1
+  fi
 
 elif [[ "$1" == "uninstall" ]]; then
   echo "########################################################################################"
@@ -207,38 +230,60 @@ elif [[ "$1" == "upgrade" ]]; then
   # Get the Redis password
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
 
+  read -r -p 'Which installation mode for Codesealer [hybrid/standalone]: '
   echo "########################################################################################"
   echo "#  Upgrade Codesealer Release"
   echo "########################################################################################"
   helm repo update codesealer
-  helm upgrade codesealer ${CODESEALER_HELM_CHART} --namespace codesealer-system \
-    --set codesealerToken="${CODESEALER_TOKEN}" \
-    --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
-    --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
-    --set worker.ingress.port=${INGRESS_PORT} \
-    --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-    --wait --timeout=90s
+  if [[ "${REPLY}" == "hybrid" ]]; then
+    helm upgrade codesealer ${CODESEALER_HELM_CHART} --namespace codesealer-system \
+      --set codesealerToken="${CODESEALER_TOKEN}" \
+      --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+      --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+      --set worker.ingress.port=${INGRESS_PORT} \
+      --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+      --wait --timeout=90s
 
-  echo "########################################################################################"
-  echo "#  Upgrade Codesealer"
-  echo "########################################################################################"
-  read -r -s -p 'Press any key to continue.'
-  kubectl rollout restart deployments --namespace codesealer-system
-  echo "########################################################################################"
-  echo "#  Waiting for Codesealer to restart"
-  echo "########################################################################################"  
-  kubectl rollout status deployments --namespace codesealer-system --watch
+    echo "########################################################################################"
+    echo "#  Upgrade Codesealer"
+    echo "########################################################################################"
+    read -r -s -p 'Press any key to continue.'
+    kubectl rollout restart deployments --namespace codesealer-system
+    echo "########################################################################################"
+    echo "#  Waiting for Codesealer to restart"
+    echo "########################################################################################"  
+    kubectl rollout status deployments --namespace codesealer-system --watch
 
-  echo "########################################################################################"
-  echo "#  Upgrade Codesealer Worker Sidecar for NGINX Ingress Controller"
-  echo "########################################################################################"
-  read -r -s -p 'Press any key to continue.'
+    echo "########################################################################################"
+    echo "#  Upgrade Codesealer Worker Sidecar for NGINX Ingress Controller"
+    echo "########################################################################################"
+    read -r -s -p 'Press any key to continue.'
 
-  kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
-  echo "########################################################################################"
-  echo "#  Waiting for NGINX Ingress Controller to restart"
-  echo "########################################################################################"  
-  kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
+    kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
+    echo "########################################################################################"
+    echo "#  Waiting for NGINX Ingress Controller to restart"
+    echo "########################################################################################"  
+    kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
+
+  elif [[ "${REPLY}" == "standalone" ]]; then
+    helm upgrade codesealer ${CODESEALER_HELM_CHART} --namespace codesealer-system \
+      --set codesealerToken="${CODESEALER_TOKEN}" \
+      --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+      --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+      --set worker.ingress.port=${INGRESS_PORT} \
+      --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+      --set worker.config.bootloader.fsEndpoints=false \
+      --set manager.enabled=true \
+      --set ingress.enabled=true \
+      --wait --timeout=90s
+  else
+    echo "####################################################################################################################"
+    echo "#  Invalid arguement!"
+    echo "#  Must specify: [hybrid | standalone]"
+    echo "####################################################################################################################"
+    exit 1
+  fi
+
 else
   echo "####################################################################################################################"
   echo "#"
@@ -246,6 +291,6 @@ else
   echo "#"
   echo "#  Usage: ./test_install.sh [install | uninstall | upgrade]"
   echo "#"
-  echo "#####################################################################################################################"
+  echo "####################################################################################################################"
   exit 1
 fi

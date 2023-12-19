@@ -4,32 +4,13 @@ metadata:
   name: config-toml
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
+  {{- if .Values.worker.config.bootloader.fsEndpoints }}
   namespace: {{ .Values.worker.ingress.namespace }}
+  {{ else }}
+  namespace: {{ .Values.ingress.namespace }}
+  {{- end }}
 data:
   config.toml: |
-    [manager]
-    listen = "0.0.0.0:{{ .Values.manager.config.listen }}"
-    tls = {{ .Values.manager.config.tls }}
-    certFile = {{ .Values.manager.config.certFile | quote }}
-    keyFile = {{ .Values.manager.config.keyFile | quote }}
-    letsEncrypt = {{ .Values.manager.config.letsEncrypt }}
-    letsEncryptDomain = {{ .Values.manager.config.letsEncryptDomain | quote }}
-
-    [[manager.backend]]
-    backendID = {{ .Values.manager.config.backend.backendID | quote }}
-    redisAddress = ["{{ .Values.worker.redis.service.name }}.{{ .Values.worker.redis.namespace }}.svc.cluster.local:{{ .Values.worker.redis.service.port }}"]
-    redisMaster = {{ .Values.worker.config.bootloader.redisMaster | quote }}
-    redisUser = {{ .Values.worker.config.bootloader.redisUser | quote }}
-    redisPassword = {{ .Values.worker.config.bootloader.redisPassword | quote }}
-    redisUseTLS = {{ .Values.worker.config.bootloader.redisUseTLS }}
-    redisIgnoreTLS = {{ .Values.worker.config.bootloader.redisIgnoreTLS }}
-    redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
-    redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
-    redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
-    influxAddress = {{ .Values.influxDB.influxAddress | quote }}
-    influxToken = {{ .Values.influxDB.influxToken | quote }}
-    influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
-
     [network]
     listen = "0.0.0.0:{{ .Values.worker.config.network.listen }}"
     tls = {{ .Values.worker.config.network.tls }}
@@ -66,6 +47,8 @@ data:
     folder = {{ .Values.worker.config.cache.folder | quote }}
     maxFileSize = {{ .Values.worker.config.cache.maxFileSize }}
     maxSize = {{ .Values.worker.config.cache.maxSize }}
+
+    {{- if .Values.worker.config.bootloader.fsEndpoints }}
 
     [[endpoint]]
     disable = {{ .Values.worker.config.endpoint.disable }}
@@ -130,3 +113,30 @@ data:
     overrideMaxAge = {{ .Values.worker.config.endpoint.cacheRule.overrideMaxAge }}
     ignoreNoStore = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoStore }}
     ignoreNoCache = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoCache }}
+    {{- end }}
+    
+    {{- if .Values.manager.enabled }}
+
+    [manager]
+    listen = "0.0.0.0:{{ .Values.manager.config.listen }}"
+    tls = {{ .Values.manager.config.tls }}
+    certFile = {{ .Values.manager.config.certFile | quote }}
+    keyFile = {{ .Values.manager.config.keyFile | quote }}
+    letsEncrypt = {{ .Values.manager.config.letsEncrypt }}
+    letsEncryptDomain = {{ .Values.manager.config.letsEncryptDomain | quote }}
+
+    [[manager.backend]]
+    backendID = {{ .Values.manager.config.backend.backendID | quote }}
+    redisAddress = ["{{ .Values.worker.redis.service.name }}.{{ .Values.worker.redis.namespace }}.svc.cluster.local:{{ .Values.worker.redis.service.port }}"]
+    redisMaster = {{ .Values.worker.config.bootloader.redisMaster | quote }}
+    redisUser = {{ .Values.worker.config.bootloader.redisUser | quote }}
+    redisPassword = {{ .Values.worker.config.bootloader.redisPassword | quote }}
+    redisUseTLS = {{ .Values.worker.config.bootloader.redisUseTLS }}
+    redisIgnoreTLS = {{ .Values.worker.config.bootloader.redisIgnoreTLS }}
+    redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
+    redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
+    redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
+    influxAddress = {{ .Values.influxDB.influxAddress | quote }}
+    influxToken = {{ .Values.influxDB.influxToken | quote }}
+    influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
+    {{- end }}

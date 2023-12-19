@@ -7,7 +7,11 @@ metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}  
   name: {{ .Values.worker.secret.name }}
+  {{- if .Values.worker.config.bootloader.fsEndpoints }}
   namespace: {{ .Values.worker.ingress.namespace }}
+  {{ else }}
+  namespace: {{ .Values.ingress.namespace }}
+  {{- end }}
 type: {{ .Values.worker.secret.type }}
 data:
   # Cert for {{ include "worker.service.fullname" . }}

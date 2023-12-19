@@ -117,7 +117,42 @@ kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_N
 kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
-Codesealer will not automatically protect your application.
+To see what parameters are available issue the following command:
+```bash
+helm show values codesealer/codesealer
+```
+
+Codesealer has the following default settings which affect Redis and WAF:
+
+  --set worker.redis.service.name=redis-master \
+  --set worker.config.bootloader.redisUser=default \
+  --set worker.config.bootloader.redisUseTLS=false \
+  --set worker.config.bootloader.redisIgnoreTLS=true \
+  --set worker.config.endpoint.wafMonitorMode=false \
+  --set worker.config.endpoint.enableWaf=true \
+  --set worker.config.endpoint.wafFullTransaction=true \
+  --set worker.config.endpoint.crs.paranoiaLevel=1 \
+
+> NOTE: If you would like to install Codesealer in `Standard` mode (with a local Manager) use the following
+>       command instead which adds the following set parameters:
+>
+>   --set worker.config.bootloader.fsEndpoints=false
+>   --set manager.enabled=true
+>   --set ingress.enabled=true
+>
+> ```bash
+> helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
+>   --set codesealerToken="${CODESEALER_TOKEN}" \
+>   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+>   --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+>   --set worker.ingress.port=${INGRESS_PORT} \
+>   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+>   --set worker.config.bootloader.fsEndpoints=false \
+>   --set manager.enabled=true \
+>   --set ingress.enabled=true \
+>   --wait --timeout=90s
+> ```
+>
 
 ## Upgrading
 
