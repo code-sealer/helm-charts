@@ -178,7 +178,7 @@ worker:
     namespace: redis
 
     service:
-      name: "redis"
+      name: "redis-master"
       port: 6379
 
   service:
@@ -279,7 +279,7 @@ worker:
       # instance, so keep this in mind if you are subject to connection limitations.
       redisMaxConn: 100
       # If 'true', TLS certificate errors for Redis will be ignored.
-      redisIgnoreTLS: false
+      redisIgnoreTLS: true
       # Redis connect timeout specified in milliseconds. Defaults to 50 if not set.
       redisConnectTimeout: 50
       # Redis read timeout specified in milliseconds. Defaults to 250 if not set.
@@ -502,14 +502,6 @@ worker:
         # Smaller violations, like violations of protocol/standards, carry lower scores.
         inbound_anomaly_score_threshold: 5
         outbound_anomaly_score_threshold: 4
-        # Rules in the IP Reputation file can check the client against a list of high
-        # risk country codes. These countries have to be defined in the variable
-        # tx.high_risk_country_codes via their ISO 3166 two-letter country code:
-        # This rule requires SecGeoLookupDB to be enabled and the GeoIP database to be
-        # downloaded (see the section "GeoIP Database" above.)
-        # By default, the list is empty. A list used by some sites was the following:
-        # setvar:'tx.high_risk_country_codes=UA ID YU LT EG RO BG TR RU PK MY CN'"
-        high_risk_country_codes: ""
         # Set the SecCollectionTimeout directive from the ModSecurity default (1 hour)
         # to a lower setting which is appropriate to most sites.
         # This increases performance by cleaning out stale collection (block) entries.
