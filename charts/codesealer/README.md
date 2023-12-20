@@ -67,14 +67,14 @@ helm install juice-shop securecodebox/juice-shop --namespace juice-shop --create
 
 Codesealer requires Redis. If you don't have your own implementation of Redis you can install
 [Bitnami package for Redis(R)](https://github.com/bitnami/charts/blob/main/bitnami/redis/README.md)
-using the following command:
+by setting the `REDIS_NAMESPACE` variable and using the following command:
 
 ```bash
-    helm install redis oci://registry-1.docker.io/bitnamicharts/redis \
-    --namespace ${REDIS_NAMESPACE} --create-namespace \
-    --set auth.enabled=true \
-    --set replica.replicaCount=1 \
-    --wait --timeout=60s
+helm install redis oci://registry-1.docker.io/bitnamicharts/redis \
+  --namespace ${REDIS_NAMESPACE} --create-namespace \
+  --set auth.enabled=true \
+  --set replica.replicaCount=1 \
+  --wait --timeout=60s
 ```
 
 You will need the Redis generated password to install Codesealer.  You can get that password with
@@ -86,8 +86,9 @@ export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis 
 
 ## Installing
 
-To install this Helm chart, set the `INGRESS_NAMESPACE` variable to match your target
-ingress deployment and run the following commands:
+To install this Helm chart, set the `INGRESS_NAMESPACE`, `INGRESS_DEPLOYMENT`,
+`INGRESS_PORT`, and `REDIS_PASSWORD` variables to match your target deployment and run
+the following commands:
 
 ```bash
 helm repo add codesealer https://code-sealer.github.io/helm-charts
@@ -100,13 +101,11 @@ helm install codesealer codesealer/codesealer --create-namespace --namespace cod
     --wait --timeout=90s
 ```
 
-To enabled Codesealer on your ingress, set the `INGRESS_NAMESPACE` and
-`INGRESS_DEPLOYMENT` variables to match your target ingress and run the following
-commands:
+To enabled Codesealer on your ingress run the following commands:
 
 ```bash
-kubectl label ns $INGRESS_NAMESPACE codesealer.com/webhook=enabled
-kubectl patch deployment $INGRESS_DEPLOYMENT -n $INGRESS_NAMESPACE -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
+kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled
+kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
 ```
 
 Your ingress pods should now restart and have Codesealer sidecars running with them.
@@ -144,8 +143,8 @@ Finally, set the `INGRESS_NAMESPACE` and `INGRESS_DEPLOYMENT` variables to match
 target ingress and restart your ingress deployment:
 
 ```bash
-kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
-kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
+kubectl rollout restart deployment ${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
+kubectl rollout status deployment ${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
 ## Uninstalling
