@@ -48,7 +48,6 @@ if [[ "$1" == "install" ]]; then
     helm upgrade --install ingress-nginx ingress-nginx \
     --repo https://kubernetes.github.io/ingress-nginx \
     --namespace ${INGRESS_NAMESPACE} --create-namespace \
-    --set controller.updateStrategy.rollingUpdate.maxUnavailable=1  \
     --set controller.hostPort.enabled=true \
     --wait --timeout=60s
   else
