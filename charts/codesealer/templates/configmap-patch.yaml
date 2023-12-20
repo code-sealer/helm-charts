@@ -35,7 +35,6 @@ data:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.worker.config.network.listen }}
-              hostPort: {{ .Values.worker.service.port }}
               protocol: TCP
           volumeMounts:
             - name: config-toml
