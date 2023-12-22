@@ -1,34 +1,28 @@
-{{- if .Values.worker.config.bootloader.fsEndpoints }}
-apiVersion: v1
-kind: ConfigMap
+{{- if not .Values.worker.config.bootloader.fsEndpoints }}
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: codesealer-mutating-webhook-patch
   labels:
-   {{- include "webhook.labels" . | nindent 4 }}
-  namespace: {{ .Values.webhook.namespace }}
-data:
-  patch.yaml: |
+   {{- include "worker.labels" . | nindent 4 }}
+  name: {{ .Values.worker.name }}
+  namespace: {{ .Values.ingress.namespace }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "worker.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+      {{- include "worker.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      initContainers:
-        - name: {{ .Values.initContainers.name }}
-          image: "{{ .Values.image.repository }}/{{ .Values.initContainers.image }}:{{ .Values.initContainers.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 0
-            capabilities:
-              add:
-                - NET_ADMIN
-            privileged: true
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.ingress.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
       containers:
         - name: {{ .Values.worker.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"

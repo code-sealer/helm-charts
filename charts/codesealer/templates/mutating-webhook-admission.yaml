@@ -1,3 +1,4 @@
+{{- if .Values.worker.config.bootloader.fsEndpoints }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
 {{- if .Values.admission.secret.create }}
 ---
@@ -58,3 +59,4 @@ webhooks:
         scope: "Namespaced"
     sideEffects: {{ .Values.admission.sideEffects }}
     timeoutSeconds: {{ .Values.admission.timeout }}
+{{- end }}

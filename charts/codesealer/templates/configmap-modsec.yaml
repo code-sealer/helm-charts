@@ -4,7 +4,11 @@ metadata:
   name: modsec-conf
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
+  {{- if .Values.worker.config.bootloader.fsEndpoints }}
   namespace: {{ .Values.worker.ingress.namespace }}
+  {{ else }}
+  namespace: {{ .Values.ingress.namespace }}
+  {{- end }}
 data:
   modsec.conf: |
     Include modsecurity/modsecurity.conf
@@ -12,14 +16,43 @@ data:
     # OWASP CRS v3 rules
     Include modsecurity/crs-setup.conf
     {{- if .Values.worker.config.endpoint.rules.rules900.enabled }}
+
     Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
     {{ else }}
+
     # Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
     {{- end }}
     {{- if .Values.worker.config.endpoint.rules.rules901.enabled }}
+
     Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
     {{ else }}
+    
     # Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules903.enabled }}
+    Include modsecurity/rules/REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
+
+    Include modsecurity/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
+    
+    Include modsecurity/rules/REQUEST-903.9003-NEXTCLOUD-EXCLUSION-RULES.conf
+    
+    Include modsecurity/rules/REQUEST-903.9004-DOKUWIKI-EXCLUSION-RULES.conf
+    
+    Include modsecurity/rules/REQUEST-903.9005-CPANEL-EXCLUSION-RULES.conf
+    
+    Include modsecurity/rules/REQUEST-903.9006-XENFORO-EXCLUSION-RULES.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
+    
+    # Include modsecurity/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
+    
+    # Include modsecurity/rules/REQUEST-903.9003-NEXTCLOUD-EXCLUSION-RULES.conf
+    
+    # Include modsecurity/rules/REQUEST-903.9004-DOKUWIKI-EXCLUSION-RULES.conf
+    
+    # Include modsecurity/rules/REQUEST-903.9005-CPANEL-EXCLUSION-RULES.conf
+    
+    # Include modsecurity/rules/REQUEST-903.9006-XENFORO-EXCLUSION-RULES.conf
     {{- end }}
     {{- if .Values.worker.config.endpoint.rules.rules905.enabled }}
     Include modsecurity/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
@@ -76,6 +109,11 @@ data:
     {{ else }}
     # Include modsecurity/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
     {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules934.enabled }}
+    Include modsecurity/rules/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
+    {{- end }}
     {{- if .Values.worker.config.endpoint.rules.rules941.enabled }}
     Include modsecurity/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
     {{ else }}
@@ -90,6 +128,11 @@ data:
     Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
     {{ else }}
     # Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+    {{- end }}
+    {{- if .Values.worker.config.endpoint.rules.rules944.enabled }}
+    Include modsecurity/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
+    {{ else }}
+    # Include modsecurity/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
     {{- end }}
     {{- if .Values.worker.config.endpoint.rules.rules949.enabled }}
     Include modsecurity/rules/REQUEST-949-BLOCKING-EVALUATION.conf

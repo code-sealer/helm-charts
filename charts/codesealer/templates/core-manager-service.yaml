@@ -1,0 +1,16 @@
+{{- if .Values.manager.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}
+  name: {{ .Values.manager.name }}
+  namespace: {{ .Values.ingress.namespace }}
+spec:
+  ports:
+    - name: https-{{ .Values.manager.config.listen }}
+      port: {{ .Values.manager.service.port }}
+      targetPort: {{ .Values.manager.config.listen }}
+  selector:
+    {{- include "codesealer.selectorLabels" . | nindent 6 }}
+{{- end }}
