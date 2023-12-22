@@ -933,12 +933,6 @@ manager:
 
   affinity: {}
 
-service:
-  # Direct traffic to Codesealer workers
-  type: ClusterIP
-  port: 8443
-  name: codesealer-core
-
 # Ingress Parameters for Core-Manager
 ingress:
   className: "nginx"
