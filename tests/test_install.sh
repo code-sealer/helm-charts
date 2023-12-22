@@ -251,12 +251,12 @@ elif [[ "$1" == "uninstall" ]]; then
 elif [[ "$1" == "upgrade" ]]; then
   # Get the Redis password
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
+  helm repo update codesealer
 
   read -r -p 'Which installation mode for Codesealer [hybrid/standalone]: '
   echo "########################################################################################"
   echo "#  Upgrade Codesealer Release"
   echo "########################################################################################"
-  helm repo update codesealer
   if [[ "${REPLY}" == "hybrid" ]]; then
     helm upgrade codesealer ${CODESEALER_HELM_CHART} --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
