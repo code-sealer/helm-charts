@@ -228,9 +228,9 @@ worker:
       # 'TLS1.0', 'TLS1.1', 'TLS1.2', 'TLS1.3'
       # If this option is not set, TLS 1.2 is used as the default.
       tlsMinVersion: "TLS1.2"
-      # Paths for TLS certificate and key files that are used if 'manager.tls' is set to true.
-      # When using the Management Portal, the certificate and key above will be used as
-      # fallback when *no* certificate and key is specified in the Management Portal.
+      # Paths for TLS certificate and key files that are used if 'network.tls' is set to true.
+      # When using the Management Portal, this certificate and key will be used as fallback
+      # when *no* certificate and key is specified in the Management Portal.
       certFile: "./certs/tls.crt"
       keyFile: "./certs/tls.key"
       # If 'true', this Worker will  be able to provision certificates via Let's Encrypt. Note
@@ -367,7 +367,7 @@ worker:
       # option, you agree to the at any time applicable TOS for Let's Encrypt. Note: The DNS
       # Record for the URL specified in 'endpoint.remoteIn' must point to Codesealer.
       letsEncrypt: false
-      # Paths for TLS certificate and key files that are used if 'manager.tls' is set to true.
+      # Paths for TLS certificate and key files that are used if 'network.tls' is set to true.
       tlsCertPath: "./certs/tls.crt"
       tlsKeyPath: "./certs/tls.key"
 
@@ -934,13 +934,13 @@ manager:
   affinity: {}
 
 service:
+  # Direct traffic to Codesealer workers
   type: ClusterIP
-  port: 8444
-  name: core-manager
+  port: 8443
+  name: codesealer-core
 
 # Ingress Parameters for Core-Manager
 ingress:
-  enabled: false
   className: "nginx"
   namespace: codesealer-system
   annotations:

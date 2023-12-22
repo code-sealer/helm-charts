@@ -5,7 +5,9 @@ To see the credentials for this account, check the core-manager log:
   $ kubectl get pods -n codesealer-system
   $ kubectl logs <core-manager-pod> -n codesealer-system | grep password
 
-The manager can be accessed at https://localhost
+  $ kubectl port-forward service/core-manager -n {{ .Values.ingress.namespace }} 8444:8444 &
+
+The manager can be accessed at https://localhost:8444
 
   1. Log in with admin account and the manager password from the log
   2. Go to Documentation to setup your first endpoint 

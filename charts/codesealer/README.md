@@ -151,8 +151,28 @@ Codesealer has the following default settings which affect Redis and WAF:
   --set worker.config.endpoint.wafFullTransaction=true \
   --set worker.config.endpoint.crs.paranoiaLevel=1 \
 
-> NOTE: If you would like to install Codesealer in `Standard` mode (with a local Manager) see
->       [Codesealer Standalone Helm Chart](/charts/codesealer/README-standalone.md)
+> NOTE: If you would like to install Codesealer in `standalone` mode (with a local Manager) issue the
+>       following commands:
+>
+> ```bash
+> helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer-system \
+>   --set codesealerToken="${CODESEALER_TOKEN}" \
+>   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+>   --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+>   --set worker.ingress.port=${INGRESS_PORT} \
+>   --set worker.redis.namespace=${REDIS_NAMESPACE} \
+>   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+>   --set manager.enabled=true \
+>   --wait --timeout=90s
+> ```
+>
+>  NOTE: To access local manager issue the following command:
+>
+> ```bash
+>kubectl port-forward service/core-manager -n ${INGRESS_NAMESPACE} 84444:8444 &
+> ```
+> You can access the manager at https://localhost:8444
+>
 
 ## Upgrading
 
@@ -164,7 +184,7 @@ export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis 
 ```
 
 To upgrade an existing release, please ensure the prerequisite parametes are defined
-and run the following commands:
+and run the following command instead:
 
 ```bash
 helm repo update codesealer
@@ -187,8 +207,20 @@ kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_N
 kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
-> NOTE: If you would like to upgrade Codesealer in `Standard` mode (with a local Manager) see
->       [Codesealer Standalone Helm Chart](/charts/codesealer/README-standalone.md)
+> NOTE: If you would like to upgrade Codesealer in `standalone` mode (with a local Manager) issue the
+>       following command instead:
+>
+> ```bash
+> helm upgrade codesealer codesealer/codesealer --namespace codesealer-system \
+>   --set codesealerToken="${CODESEALER_TOKEN}" \
+>   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
+>   --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
+>   --set worker.ingress.port=${INGRESS_PORT} \
+>   --set worker.redis.namespace=${REDIS_NAMESPACE} \
+>   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+>   --set manager.enabled=true \
+>   --wait --timeout=90s
+> ```
 
 ## Uninstalling
 
