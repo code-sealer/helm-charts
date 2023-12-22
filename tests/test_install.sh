@@ -1,4 +1,16 @@
 #!/bin/bash
+# Github Image Registry PAT
+if [ -z "${CODESEALER_TOKEN}" ]; then
+  echo "####################################################################################################################"
+  echo "#"
+  echo "#  Please set CODESEALER_TOKEN variable"
+  echo "#"
+  echo "#    $ export CODESEALER_TOKEN=<Registry Access Token>"
+  echo "#"
+  echo "#####################################################################################################################"
+  exit 1
+fi
+
 set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
@@ -12,18 +24,7 @@ fi
 
 clear
 
-# Github Image Registry PAT
-if [ -z "${CODESEALER_TOKEN}" ]; then
-  echo "####################################################################################################################"
-  echo "#"
-  echo "#  Please set CODESEALER_TOKEN variable"
-  echo "#"
-  echo "#    $ export CODESEALER_TOKEN=<Registry Access Token>"
-  echo "#"
-  echo "#####################################################################################################################"
-fi
-
-# Codesealer Helm Repo
+# Codesealer Public Helm Repo
 export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
 export CODESEALER_HELM_CHART=codesealer/codesealer
 
@@ -189,7 +190,6 @@ if [[ "$1" == "install" ]]; then
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
       --set worker.config.bootloader.fsEndpoints=false \
       --set manager.enabled=true \
-      --set ingress.enabled=true \
       --wait --timeout=90s
   else
     echo "####################################################################################################################"
@@ -298,7 +298,6 @@ elif [[ "$1" == "upgrade" ]]; then
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
       --set worker.config.bootloader.fsEndpoints=false \
       --set manager.enabled=true \
-      --set ingress.enabled=true \
       --wait --timeout=90s
   else
     echo "####################################################################################################################"

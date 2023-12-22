@@ -40,7 +40,11 @@ data:
     influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
     modSecurityConf = {{ .Values.worker.config.bootloader.modSecurityConf | quote }}
+    {{- if .Values.manager.enabled }}
+    fsEndpoints = false
+    {{ else }}
     fsEndpoints = {{ .Values.worker.config.bootloader.fsEndpoints }}
+    {{- end }}
     sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}
 
     [cache]

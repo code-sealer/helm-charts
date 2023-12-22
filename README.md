@@ -12,7 +12,7 @@ Codesealer, when implemented as a sidecar, uses an Admission Webhook to install 
 in the same pod as an Ingress Controller.  
 
 This diagram shows how the Admission Webhook comes into the picture.  Codesealer is implemented
-as a `Mutating Admission`` Webhook:
+as a `Mutating Admission` Webhook:
 
 ![admission webhook flow](./img/webhook.png)
 
