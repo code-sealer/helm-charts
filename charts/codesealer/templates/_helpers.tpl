@@ -165,6 +165,33 @@ clientKey: {{ $clientKey }}
 {{- end -}}
 
 {{/*
+Name of the worker.
+*/}}
+{{- define "worker.name" -}}
+{{- default .Values.worker.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Worker labels
+*/}}
+{{- define "worker.labels" -}}
+helm.sh/chart: {{ include "codesealer.chart" . }}
+{{ include "worker.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Worker Selector labels
+*/}}
+{{- define "worker.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "worker.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Create the name of the Redis service to use
 */}}
 {{- define "worker.serviceName" -}}

@@ -1,0 +1,16 @@
+{{- if not .Values.worker.config.bootloader.fsEndpoints }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+   {{- include "worker.labels" . | nindent 4 }}
+  name: {{ .Values.worker.name }}
+  namespace: {{ .Values.ingress.namespace }}
+spec:
+  ports:
+    - name: https-{{ .Values.worker.service.port }}
+      port: {{ .Values.worker.service.port }}
+      targetPort: {{ .Values.worker.config.network.listen }}
+  selector:
+    {{- include "worker.selectorLabels" . | nindent 6 }}
+{{- end }}

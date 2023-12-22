@@ -1,5 +1,19 @@
+{{- if .Values.manager.enabled }}
+The first time core-manager is started, it will create a Maintenance Administrator. 
+To see the credentials for this account, check the core-manager log: 
+
+  $ kubectl get pods -n codesealer-system
+  $ kubectl logs <core-manager-pod> -n codesealer-system | grep password
+
+The manager can be accessed at https://localhost
+
+  1. Log in with admin account and the manager password from the log
+  2. Go to Documentation to setup your first endpoint 
+
+{{ else }}
 To enable Codesealer on Ingress Controller:
 
   $ kubectl label ns {{ .Values.worker.ingress.namespace }} codesealer.com/webhook=enabled
   
   $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
+{{- end }}  
