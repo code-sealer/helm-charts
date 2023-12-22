@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -ueo pipefail
+set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
   echo "####################################################################################################################"
@@ -13,7 +13,7 @@ fi
 clear
 
 # Github Image Registry PAT
-if [ -z ${CODESEALER_TOKEN} ]; then 
+if [ -z "${CODESEALER_TOKEN}" ]; then
   echo "####################################################################################################################"
   echo "#"
   echo "#  Please set CODESEALER_TOKEN variable"
@@ -24,17 +24,13 @@ if [ -z ${CODESEALER_TOKEN} ]; then
 fi
 
 # Codesealer Helm Repo
-export CODESEALER_HELM_REPO=https://raw.githubusercontent.com/tfarinacci/codesealer-helm/main/
+export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
 export CODESEALER_HELM_CHART=codesealer/codesealer
 
 # NGINX Ingress Controller Helm Repo
 export INGRESS_HELM_REPO=https://kubernetes.github.io/ingress-nginx
 export INGRESS_HELM_CHART=ingress-nginx
 export INGRESS_DEPLOYMENT=ingress-nginx-controller
-
-# export INGRESS_HELM_REPO=https://helm.nginx.com/stable
-# export INGRESS_HELM_CHART=nginx-stable
-# export INGRESS_DEPLOYMENT=nginx-stable-nginx-ingress-controller
 
 # Installation specific  exports
 export INGRESS_NAMESPACE=ingress-nginx
@@ -138,7 +134,7 @@ if [[ "$1" == "install" ]]; then
     echo "########################################################################################"
     echo "# Redis password: ${REDIS_PASSWORD}"
     echo "# "
-    echo "# Waiting for Codesealer to starting `${CODESEALER_MODE}` mode"
+    echo "# Waiting for Codesealer to starting ${CODESEALER_MODE} mode"
     echo "########################################################################################"
 
     # Start Codesealer in `hybrid` mode
