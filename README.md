@@ -25,7 +25,7 @@ certificates.
 
 In this example the `Reverse Proxy` is Codesealer.  Traffic originally destinged for the `Ingress Controller` 
 over the ethernet eth0 interface is pre-routed to Codesealer for processing. Once Codesealer processes the payload 
-it will send the traffic to the Ingress Controller over the loopback l0 interface on the original port.
+it will send the traffic to the Ingress Controller over the loopback lo interface on the original port.
 
 Codesealer support multiple Ingress Controllers including NGINX Ingress, Contour, Istio Gateway,
 Kubernetes Gateway, and Cloud Provider Ingress Controllers (e.g. AWS ALB)
