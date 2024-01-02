@@ -11,7 +11,7 @@ if [ -z "${CODESEALER_TOKEN}" ]; then
   exit 1
 fi
 
-## set -ueo pipefail
+set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
   echo "####################################################################################################################"
@@ -99,7 +99,7 @@ if [[ "$1" == "install" ]]; then
   read -r -s -p 'Press any key to continue.'
   echo ""
   # Install Codesealer helm repo
-  ## helm repo add codesealer ${CODESEALER_HELM_REPO}
+  helm repo add codesealer ${CODESEALER_HELM_REPO}
 
   # Get the Redis password
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
@@ -143,8 +143,7 @@ if [[ "$1" == "install" ]]; then
     echo "########################################################################################"
 
     # Start Codesealer in `hybrid` mode
-    ## helm install codesealer ${CODESEALER_HELM_CHART} \
-    helm install /Users/tony/Go/src/github.com/codesealer/helm-charts/charts/codesealer --generate-name \
+    helm install codesealer ${CODESEALER_HELM_CHART} \
       --create-namespace --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
       --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
@@ -187,8 +186,7 @@ if [[ "$1" == "install" ]]; then
 
   elif [[ "${REPLY}" == "enterprise" ]]; then
     # Start Codesealer in `enterprise` mode
-    ## helm install codesealer ${CODESEALER_HELM_CHART} \
-    helm install /Users/tony/Go/src/github.com/codesealer/helm-charts/charts/codesealer --generate-name \
+    helm install codesealer ${CODESEALER_HELM_CHART} \
       --create-namespace --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
       --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
