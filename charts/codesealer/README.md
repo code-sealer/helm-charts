@@ -151,7 +151,7 @@ Codesealer has the following default settings which affect Redis and WAF:
   --set worker.config.endpoint.wafFullTransaction=true \
   --set worker.config.endpoint.crs.paranoiaLevel=1 \
 
-> NOTE: If you would like to install Codesealer in `standalone` mode (with a local Manager) issue the
+> NOTE: If you would like to install Codesealer in `enterprise` mode (with a local Manager) issue the
 >       following commands:
 >
 > ```bash
@@ -207,7 +207,7 @@ kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_N
 kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
 
-> NOTE: If you would like to upgrade Codesealer in `standalone` mode (with a local Manager) issue the
+> NOTE: If you would like to upgrade Codesealer in `enterprise` mode (with a local Manager) issue the
 >       following command instead:
 >
 > ```bash

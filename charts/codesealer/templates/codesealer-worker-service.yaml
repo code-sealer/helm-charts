@@ -1,4 +1,4 @@
-{{- if not .Values.worker.config.bootloader.fsEndpoints }}
+{{- if .Values.manager.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

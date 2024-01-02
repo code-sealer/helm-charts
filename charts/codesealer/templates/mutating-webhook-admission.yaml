@@ -1,4 +1,4 @@
-{{- if .Values.worker.config.bootloader.fsEndpoints }}
+{{- if not .Values.manager.enabled }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
 {{- if .Values.admission.secret.create }}
 ---

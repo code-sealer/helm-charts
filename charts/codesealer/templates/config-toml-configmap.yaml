@@ -4,7 +4,7 @@ metadata:
   name: config-toml
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if .Values.worker.config.bootloader.fsEndpoints }}
+  {{- if not .Values.manager.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.ingress.namespace }}
@@ -43,7 +43,7 @@ data:
     {{- if .Values.manager.enabled }}
     fsEndpoints = false
     {{ else }}
-    fsEndpoints = {{ .Values.worker.config.bootloader.fsEndpoints }}
+    fsEndpoints = true
     {{- end }}
     sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}
 
@@ -52,7 +52,7 @@ data:
     maxFileSize = {{ .Values.worker.config.cache.maxFileSize }}
     maxSize = {{ .Values.worker.config.cache.maxSize }}
 
-    {{- if .Values.worker.config.bootloader.fsEndpoints }}
+    {{- if not .Values.manager.enabled }}
 
     [[endpoint]]
     disable = {{ .Values.worker.config.endpoint.disable }}

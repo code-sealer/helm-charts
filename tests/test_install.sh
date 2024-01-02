@@ -11,7 +11,7 @@ if [ -z "${CODESEALER_TOKEN}" ]; then
   exit 1
 fi
 
-set -ueo pipefail
+## set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
   echo "####################################################################################################################"
@@ -50,13 +50,16 @@ if [[ "$1" == "install" ]]; then
     echo "#  Waiting for NGINX Ingress Controller to start"
     echo "########################################################################################" 
     helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
+    # Kind Cluster configuration
     helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
     --namespace ${INGRESS_NAMESPACE} --create-namespace \
-    --wait --timeout=90s
+    --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
+    --set controller.hostPort.enabled=true \
+    --wait --timeout=120s
 
-    # --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
-    # --set controller.hostPort.enabled=true \
-    # --set controller.service.loadBalancerIP=127.0.0.1 \
+  # Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error with Kind Cluster
+  CA=$(kubectl -n ingress-nginx get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
+  kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
 
   else
     echo "########################################################################################"
@@ -94,12 +97,13 @@ if [[ "$1" == "install" ]]; then
   echo "# Install Codesealer"
   echo "########################################################################################"
   read -r -s -p 'Press any key to continue.'
+  echo ""
   # Install Codesealer helm repo
-  helm repo add codesealer ${CODESEALER_HELM_REPO}
+  ## helm repo add codesealer ${CODESEALER_HELM_REPO}
 
   # Get the Redis password
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
-  read -r -p 'Which installation mode for Codesealer [hybrid/standalone]: '
+  read -r -p 'Which installation mode for Codesealer [hybrid/enterprise]: '
 
   # Check if they want the sample application for testing
   if [[ "${REPLY}" == "hybrid" ]]; then
@@ -135,11 +139,13 @@ if [[ "$1" == "install" ]]; then
     echo "########################################################################################"
     echo "# Redis password: ${REDIS_PASSWORD}"
     echo "# "
-    echo "# Waiting for Codesealer to starting ${CODESEALER_MODE} mode"
+    echo "# Waiting for Codesealer to start in ${CODESEALER_MODE} mode"
     echo "########################################################################################"
 
     # Start Codesealer in `hybrid` mode
-    helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
+    ## helm install codesealer ${CODESEALER_HELM_CHART} \
+    helm install /Users/tony/Go/src/github.com/codesealer/helm-charts/charts/codesealer --generate-name \
+      --create-namespace --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
       --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
       --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
@@ -179,22 +185,23 @@ if [[ "$1" == "install" ]]; then
       kubectl get pods --namespace ${INGRESS_NAMESPACE}
     fi
 
-  elif [[ "${REPLY}" == "standalone" ]]; then
-    # Start Codesealer in `standalone` mode
-    helm install codesealer ${CODESEALER_HELM_CHART} --create-namespace --namespace codesealer-system \
+  elif [[ "${REPLY}" == "enterprise" ]]; then
+    # Start Codesealer in `enterprise` mode
+    ## helm install codesealer ${CODESEALER_HELM_CHART} \
+    helm install /Users/tony/Go/src/github.com/codesealer/helm-charts/charts/codesealer --generate-name \
+      --create-namespace --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
       --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
       --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
       --set worker.ingress.port=${INGRESS_PORT} \
       --set worker.redis.namespace=${REDIS_NAMESPACE} \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set worker.config.bootloader.fsEndpoints=false \
       --set manager.enabled=true \
       --wait --timeout=90s
   else
     echo "####################################################################################################################"
     echo "#  Invalid arguement!"
-    echo "#  Must specify: [hybrid | standalone]"
+    echo "#  Must specify: [hybrid | enterprise]"
     echo "####################################################################################################################"
     exit 1
   fi
@@ -253,7 +260,7 @@ elif [[ "$1" == "upgrade" ]]; then
   export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
   helm repo update codesealer
 
-  read -r -p 'Which installation mode for Codesealer [hybrid/standalone]: '
+  read -r -p 'Which installation mode for Codesealer [hybrid/enterprise]: '
   echo "########################################################################################"
   echo "#  Upgrade Codesealer Release"
   echo "########################################################################################"
@@ -288,7 +295,7 @@ elif [[ "$1" == "upgrade" ]]; then
     echo "########################################################################################"  
     kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 
-  elif [[ "${REPLY}" == "standalone" ]]; then
+  elif [[ "${REPLY}" == "enterprise" ]]; then
     helm upgrade codesealer ${CODESEALER_HELM_CHART} --namespace codesealer-system \
       --set codesealerToken="${CODESEALER_TOKEN}" \
       --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
@@ -296,13 +303,12 @@ elif [[ "$1" == "upgrade" ]]; then
       --set worker.ingress.port=${INGRESS_PORT} \
       --set worker.redis.namespace=${REDIS_NAMESPACE} \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set worker.config.bootloader.fsEndpoints=false \
       --set manager.enabled=true \
       --wait --timeout=90s
   else
     echo "####################################################################################################################"
     echo "#  Invalid arguement!"
-    echo "#  Must specify: [hybrid | standalone]"
+    echo "#  Must specify: [hybrid | enterprise]"
     echo "####################################################################################################################"
     exit 1
   fi

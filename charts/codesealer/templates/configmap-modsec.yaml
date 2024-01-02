@@ -4,7 +4,7 @@ metadata:
   name: modsec-conf
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if .Values.worker.config.bootloader.fsEndpoints }}
+  {{- if not .Values.manager.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.ingress.namespace }}
