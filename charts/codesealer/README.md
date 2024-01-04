@@ -42,7 +42,7 @@ using the following command:
 helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
   --namespace ${INGRESS_NAMESPACE} --create-namespace \
-  --wait --timeout=90s
+  --wait --timeout=60s
 ```
 
 > NOTE: If using Kind, install the Ingress using the following variation
@@ -50,7 +50,10 @@ helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 > ```bash
 > helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 > helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
+>   --namespace ${INGRESS_NAMESPACE} --create-namespace \
+>   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
 >   --set controller.hostPort.enabled=true \
+>   --set controller.service.type=NodePort \
 >   --wait --timeout=60s
 > ```
 >
