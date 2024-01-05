@@ -4,6 +4,16 @@ This Helm chart installs [Codesealer](https://codesealer.com) as a sidecar to an
 existing ingress deployment. This enabled automatic protection of the application behind
 the ingress.
 
+This installation also will configure your Ingress Controller to operate in one the following
+2 modes:
+   1. NodePort - DEVELOP
+      Use for local installations that do not support a LoadBalancer configuration.
+      This is the default installation mode.
+   2. LoadBalancer - PROD
+      used on Production implementations or local configurations that support routing
+      to local LoadBalancer over port 443.  Some MacBooks using Docker Desktop with
+      Kubernetes support this configuration.
+
 ## Prerequisites
 
 To use this Helm chart you will need an access token for the Codesealer Docker registry.
@@ -21,11 +31,14 @@ To use this Helm chart you will also need to set the following variables to matc
 your Ingress Controller's deployment on your Kubernetes Cluster:
 
 ```bash
-export INGRESS_NAMESPACE=ingress-nginx
-export INGRESS_DEPLOYMENT=ingress-nginx-controller
-export INGRESS_PORT=443
 export INGRESS_HELM_REPO=https://kubernetes.github.io/ingress-nginx
 export INGRESS_HELM_CHART=ingress-nginx
+export REDIS_NAMESPACE=redis
+export INGRESS_NAMESPACE=ingress-nginx
+export INGRESS_DEPLOYMENT=ingress-nginx-controller
+export INGRESS_PORT=31443
+export CODESEALER_ENV=DEVELOP
+export CODESEALER_CNI=false
 ```
 
 Additionally you will need an ingress and an application to protect. Below are steps to
@@ -42,18 +55,23 @@ using the following command:
 helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
   --namespace ${INGRESS_NAMESPACE} --create-namespace \
-  --wait --timeout=60s
+  --wait --timeout=90s
 ```
 
-> NOTE: If using Kind, install the Ingress using the following variation
+> NOTE: If using NodePort instead of LoadBalancer, install the Ingress using the following variation
+>       specifiying the desired port to use
+>
+> ```bash
+> export INGRESS_PORT=31443
+> ```
 >
 > ```bash
 > helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 > helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
->   --namespace ${INGRESS_NAMESPACE} --create-namespace \
->   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
 >   --set controller.hostPort.enabled=true \
 >   --set controller.service.type=NodePort \
+>   --set controller.service.nodePorts.https=${INGRESS_PORT} \
+>   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
 >   --wait --timeout=60s
 > ```
 >
@@ -84,6 +102,7 @@ your Redis deployment on your Kubernetes Cluster:
 
 ```bash
 export REDIS_NAMESPACE=redis
+export REDIS_PASSWORD=<redis password>
 ```
 
 Codesealer requires Redis. If you don't have your own implementation of Redis you can install 
@@ -165,6 +184,7 @@ Codesealer has the following default settings which affect Redis and WAF:
 >   --set worker.ingress.port=${INGRESS_PORT} \
 >   --set worker.redis.namespace=${REDIS_NAMESPACE} \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+>   --set environment=${CODESEALER_ENV} \
 >   --set manager.enabled=true \
 >   --wait --timeout=90s
 > ```
@@ -198,6 +218,7 @@ helm upgrade codesealer codesealer/codesealer --namespace codesealer-system \
   --set worker.ingress.port=${INGRESS_PORT} \
   --set worker.redis.namespace=${REDIS_NAMESPACE} \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+  --set environment=${CODESEALER_ENV} \
   --wait --timeout=90s
 ```
 
@@ -221,6 +242,7 @@ kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NA
 >   --set worker.ingress.port=${INGRESS_PORT} \
 >   --set worker.redis.namespace=${REDIS_NAMESPACE} \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+>   --set environment=${CODESEALER_ENV} \
 >   --set manager.enabled=true \
 >   --wait --timeout=90s
 > ```
