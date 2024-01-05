@@ -30,6 +30,9 @@ initContainers:
   image: codesealer-init-networking
   tag: latest
 
+# Deplopyment configuration [PROD/DEVELOP]
+environment: DEVELOP
+
 webhook:
   name: codesealer-mutating-webhook
   replicaCount: 1
@@ -167,8 +170,8 @@ admission:
 worker:
   name: codesealer-core
   replicaCount: 1
-  image: codesealer-core-modsec
-  tag: master
+  image: release/codesealer-core-hybrid-modsec
+  tag: latest
 
   # Ingress Controller intercept parameters
   ingress:
@@ -824,7 +827,7 @@ manager:
   name: core-manager
   replicaCount: 1
   restartPolicy: Always
-  image: core-manager
+  image: release/core-manager
   tag: master
 
   service:

@@ -18,7 +18,7 @@ data:
       initContainers:
         - name: {{ .Values.initContainers.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.initContainers.image }}:{{ .Values.initContainers.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             runAsUser: 0
             capabilities:
@@ -32,9 +32,19 @@ data:
             - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.ingress.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
       {{- end }}
       containers:
+        - name: net-utils
+          image: tfarinacci/net-utils:latest
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
         - name: {{ .Values.worker.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.worker.config.network.listen }}
               protocol: TCP
