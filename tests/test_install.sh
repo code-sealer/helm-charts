@@ -329,6 +329,12 @@ if [[ "$1" == "install" ]]; then
     kubectl patch deployment "${INGRESS_DEPLOYMENT}" -n "${INGRESS_NAMESPACE}" \
       -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":"'${INGRESS_PORT}'"}}}} }'
 
+    sleep 10
+    echo "########################################################################################"
+    echo "#  Current status of NGINX Ingress Controller"
+    echo "########################################################################################"
+    kubectl get pods --namespace "${INGRESS_NAMESPACE}"
+
     echo "########################################################################################"
     echo "#  Restart NGINX Ingress Controller - only necessary if the patch did not trigger the"
     echo "#  restart"
@@ -339,7 +345,8 @@ if [[ "$1" == "install" ]]; then
       if [[ "${CODESEALER_ENV}" == "DEVELOP" ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
-        POD=$(kubectl get pods -n ${INGRESS_NAMESPACE} | grep controller | cut -d " " -f1)
+        sleep 5
+        POD=$(kubectl get pods -n ${INGRESS_NAMESPACE} | grep controller | cut -d " " -f1 | tail -n 1 )
         echo "Deleting pod: ${POD} in namespace ${INGRESS_NAMESPACE}"
         kubectl delete pod "${POD}" --namespace "${INGRESS_NAMESPACE}" --force
         sleep 10
@@ -404,6 +411,10 @@ elif [[ "$1" == "uninstall" ]]; then
   if [ "${REPLY}" == 'y' ]; then
     helm uninstall ${INGRESS_HELM_CHART} --namespace ${INGRESS_NAMESPACE}
     helm repo remove ${INGRESS_HELM_CHART}
+    sleep 5
+    POD=$(kubectl get pods -n ${INGRESS_NAMESPACE} | grep controller | cut -d " " -f1 | tail -n 1 )
+    echo "Deleting pod: ${POD} in namespace ${INGRESS_NAMESPACE}"
+    kubectl delete pod "${POD}" --namespace "${INGRESS_NAMESPACE}" --force
     kubectl delete namespace ${INGRESS_NAMESPACE} --force --grace-period=0
   else
     echo "########################################################################################"
@@ -511,6 +522,12 @@ elif [[ "$1" == "upgrade" ]]; then
     kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} \
       -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":"'${INGRESS_PORT}'"}}}} }'
 
+    sleep 10
+    echo "########################################################################################"
+    echo "#  Current status of NGINX Ingress Controller"
+    echo "########################################################################################"
+    kubectl get pods --namespace "${INGRESS_NAMESPACE}"
+
     echo "########################################################################################"
     echo "#  Restart NGINX Ingress Controller - only necessary if the patch did not trigger the"
     echo "#  restart"
@@ -521,7 +538,8 @@ elif [[ "$1" == "upgrade" ]]; then
       if [[ "${CODESEALER_ENV}" == "DEVELOP" ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
-        POD=$(kubectl get pods -n ${INGRESS_NAMESPACE} | grep controller | cut -d " " -f1)
+        sleep 5
+        POD=$(kubectl get pods -n ${INGRESS_NAMESPACE} | grep controller | cut -d " " -f1 | tail -n 1 )
         echo "Deleting pod: ${POD} in namespace ${INGRESS_NAMESPACE}"
         kubectl delete pod "${POD}" --namespace "${INGRESS_NAMESPACE}" --force
         sleep 10
