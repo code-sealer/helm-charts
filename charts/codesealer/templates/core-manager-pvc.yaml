@@ -1,0 +1,15 @@
+{{- if .Values.manager.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}
+  name: core-manager-pv-claim
+  namespace: {{ .Values.ingress.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+{{- end }}
