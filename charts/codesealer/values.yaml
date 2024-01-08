@@ -30,8 +30,9 @@ initContainers:
   image: codesealer-init-networking
   tag: latest
 
-# Deplopyment configuration [PROD/DEVELOP]
-environment: DEVELOP
+# Deplopyment configuration [Production/Development]
+development: 
+  enabled: true
 
 webhook:
   name: codesealer-mutating-webhook
@@ -179,6 +180,7 @@ worker:
     namespace: ingress-nginx
     deployment: ingress-nginx-controller
     port: 443
+    nodePort: 31443
 
   redis:
     namespace: redis

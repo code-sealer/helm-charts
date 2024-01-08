@@ -56,7 +56,11 @@ data:
 
     [[endpoint]]
     disable = {{ .Values.worker.config.endpoint.disable }}
+    {{- if .Values.development.enabled }}
+    remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.nodePort }}"
+    {{ else }}
     remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.port }}"
+    {{- end }}
     remoteOut = "{{ .Values.worker.config.endpoint.outScheme }}://{{ .Values.worker.config.endpoint.outHostname }}:{{ .Values.worker.ingress.port }}"
     scriptOptIn = {{ .Values.worker.config.endpoint.scriptOptIn }}
     scriptOptOut = {{ .Values.worker.config.endpoint.scriptOptOut }}

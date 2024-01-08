@@ -33,10 +33,10 @@ your Ingress Controller's deployment on your Kubernetes Cluster:
 ```bash
 export INGRESS_HELM_REPO=https://kubernetes.github.io/ingress-nginx
 export INGRESS_HELM_CHART=ingress-nginx
-export REDIS_NAMESPACE=redis
 export INGRESS_NAMESPACE=ingress-nginx
 export INGRESS_DEPLOYMENT=ingress-nginx-controller
-export INGRESS_PORT=31443
+export INGRESS_PORT=443
+export INGRESS_NODEPORT=31443
 export CODESEALER_ENV=DEVELOP
 export CODESEALER_CNI=false
 ```
@@ -62,7 +62,7 @@ helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 >       specifiying the desired port to use
 >
 > ```bash
-> export INGRESS_PORT=31443
+> export INGRESS_NODEPORT=31443
 > ```
 >
 > ```bash
@@ -70,7 +70,7 @@ helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 > helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 >   --set controller.hostPort.enabled=true \
 >   --set controller.service.type=NodePort \
->   --set controller.service.nodePorts.https=${INGRESS_PORT} \
+>   --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
 >   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
 >   --wait --timeout=60s
 > ```
@@ -102,7 +102,6 @@ your Redis deployment on your Kubernetes Cluster:
 
 ```bash
 export REDIS_NAMESPACE=redis
-export REDIS_PASSWORD=<redis password>
 ```
 
 Codesealer requires Redis. If you don't have your own implementation of Redis you can install 
@@ -258,34 +257,6 @@ helm repo remove codesealer
 
 ## Kubernetes Implementation Specifics
 
-### kubectl
-
-<!-- overview -->
-The Kubernetes command-line tool, [kubectl](/docs/reference/kubectl/kubectl/), allows
-you to run commands against Kubernetes clusters.
-You can use kubectl to deploy applications, inspect and manage cluster resources,
-and view logs. For more information including a complete list of kubectl operations, see the
-[`kubectl` reference documentation](/docs/reference/kubectl/).
-
-kubectl is installable on a variety of Linux platforms, macOS and Windows. 
-Find your preferred operating system below.
-
-- [Install kubectl on Linux](/docs/tasks/tools/install-kubectl-linux)
-- [Install kubectl on macOS](/docs/tasks/tools/install-kubectl-macos)
-- [Install kubectl on Windows](/docs/tasks/tools/install-kubectl-windows)
-
-### docker desktop
-
-[`docker desktop`](https://www.docker.com/products/docker-desktop/) lets you install Docker Desktop to 
-run Kubernetes on your local computer.
-
-The Docker Desktop [Quick Start](https://www.docker.com/blog/getting-started-with-docker-desktop/) page
-shows you what you need to do to get up and running with Docker Desktop.
-
-[`Kubernetes`](https://docs.docker.com/desktop/kubernetes/) must be enabled.
-
-<a class="btn btn-primary" href="https://www.docker.com/blog/getting-started-with-docker-desktop/" role="button" aria-label="View kind Quick Start Guide">View kind Quick Start Guide</a>
-
 ### kind
 
 [`kind`](https://kind.sigs.k8s.io/) lets you run Kubernetes on
@@ -319,29 +290,3 @@ nodes:
 ```
 
 <a class="btn btn-primary" href="https://kind.sigs.k8s.io/docs/user/quick-start/" role="button" aria-label="View kind Quick Start Guide">View kind Quick Start Guide</a>
-
-### minikube
-
-Like `kind`, [`minikube`](https://minikube.sigs.k8s.io/) is a tool that lets you run Kubernetes
-locally. `minikube` runs an all-in-one or a multi-node local Kubernetes cluster on your personal
-computer (including Windows, macOS and Linux PCs) so that you can try out
-Kubernetes, or for daily development work.
-
-You can follow the official
-[Get Started!](https://minikube.sigs.k8s.io/docs/start/) guide if your focus is
-on getting the tool installed.
-
-<a class="btn btn-primary" href="https://minikube.sigs.k8s.io/docs/start/" role="button" aria-label="View minikube Get Started! Guide">View minikube Get Started! Guide</a>
-
-Once you have `minikube` working, you can use it to
-[run a sample application](/docs/tutorials/hello-minikube/).
-
-## kubeadm
-
-You can use the {{< glossary_tooltip term_id="kubeadm" text="kubeadm" >}} tool to create and manage Kubernetes clusters.
-It performs the actions necessary to get a minimum viable, secure cluster up and running in a user friendly way.
-
-[Installing kubeadm](/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) shows you how to install kubeadm.
-Once installed, you can use it to [create a cluster](/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/).
-
-<a class="btn btn-primary" href="/docs/setup/production-environment/tools/kubeadm/install-kubeadm/" role="button" aria-label="View kubeadm Install Guide">View kubeadm Install Guide</a>
