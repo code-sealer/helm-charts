@@ -830,7 +830,7 @@ manager:
   replicaCount: 1
   restartPolicy: Always
   image: release/core-manager
-  tag: master
+  tag: latest
 
   service:
     type: ClusterIP

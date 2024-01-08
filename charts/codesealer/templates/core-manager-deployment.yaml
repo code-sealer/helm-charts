@@ -52,7 +52,7 @@ spec:
       volumes:
         - name: config-toml
           configMap:
-            name: config-toml
+            name: config-manager-toml
         - name: core-manager-data
           persistentVolumeClaim:
             claimName: core-manager-pv-claim
