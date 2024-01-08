@@ -170,7 +170,7 @@ admission:
 worker:
   name: codesealer-core
   replicaCount: 1
-  image: release/codesealer-core-hybrid-modsec
+  image: release/codesealer-core-modsec
   tag: latest
 
   # Ingress Controller intercept parameters
