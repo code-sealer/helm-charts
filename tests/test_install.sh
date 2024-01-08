@@ -41,7 +41,9 @@ export INGRESS_DEPLOYMENT=ingress-nginx-controller
 export REDIS_NAMESPACE=redis
 
 # Default settings
-INGRESS_PORT=31443
+INGRESS_PORT=443
+INGRESS_NODEPORT=31443
+CODESEALER_DEVELOPMENT=false
 CODESEALER_CNI=false
 
 
@@ -73,7 +75,7 @@ if [[ "$1" == "install" ]]; then
   if [[ "${REPLY}" == [Pp][Rr][Oo][Dd] ]]; then
 
     # Set environment
-    CODESEALER_ENV=PROD
+    CODESEALER_DEVELOPMENT=false
   
     echo "########################################################################################"
     echo "#  Do you wish to install NGINX Ingress Controller using a LoadBalancer configuration?"
@@ -96,29 +98,29 @@ if [[ "$1" == "install" ]]; then
       echo "########################################################################################"
     fi
 
-    # Set Ingress Controller port
-    INGRESS_PORT=443
-
   else
 
     # Set environment
-    CODESEALER_ENV=DEVELOP
+    CODESEALER_DEVELOPMENT=true
 
     echo "########################################################################################"
     echo "#  Configuring NGINX Ingress Controller using a NodePort configuration?"
     echo "#  "
+    echo "#  Use this configuration for local deploments where a LoadBalancer cannot be exposed."
+    echo "#  "
     echo "#  Documentation: https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx"
     echo "########################################################################################"
-    read -r -p "Which port do you want NGINX Ingress Controller to use: [${INGRESS_PORT}] "
+    read -r -p "Which port do you want NGINX Ingress Controller NodePort to use: [${INGRESS_NODEPORT}] "
     if [ -z "${REPLY}" ]; then
       # Set Ingress Controller port
-      echo "Using default NodePort: ${INGRESS_PORT}"
+      echo "Using default NodePort: ${INGRESS_NODEPORT}"
+      export INGRESS_NODEPORT=${INGRESS_NODEPORT}
     else
       # Set Ingress Controller port
-      INGRESS_PORT=${REPLY}
+      export INGRESS_NODEPORT=${REPLY}
     fi
 
-    read -r -p "Install NGINX Ingress Controller using a NodePort on port ${INGRESS_PORT} [y/n]: "
+    read -r -p "Install NGINX Ingress Controller using a NodePort on port ${INGRESS_NODEPORT} [y/n]: "
     if [[ "${REPLY}" == 'y' ]]; then
 
       echo "########################################################################################"
@@ -130,7 +132,7 @@ if [[ "$1" == "install" ]]; then
       --namespace ${INGRESS_NAMESPACE} --create-namespace \
       --set controller.hostPort.enabled=true \
       --set controller.service.type=NodePort \
-      --set controller.service.nodePorts.https=${INGRESS_PORT} \
+      --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
       --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
       --wait --timeout=60s
 
@@ -139,6 +141,7 @@ if [[ "$1" == "install" ]]; then
     kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
 
     else
+
       echo "########################################################################################"
       echo "#  Skipping NGINX Development Ingress Controller installation - enter Ingress Controller"
       echo "#  configuration:"
@@ -149,6 +152,8 @@ if [[ "$1" == "install" ]]; then
       export INGRESS_DEPLOYMENT="${REPLY}"
       read -r -p 'Ingress Controller Port?: '
       export INGRESS_PORT="${REPLY}"
+      read -r -p 'Ingress Controller NodePort?: '
+      export INGRESS_NODEPORT="${REPLY}"
     fi
 
   fi
@@ -231,7 +236,7 @@ if [[ "$1" == "install" ]]; then
       --set worker.ingress.port="${INGRESS_PORT}" \
       --set worker.redis.namespace="${REDIS_NAMESPACE}" \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set environment="${CODESEALER_ENV}" \
+      --set development.enabled="${CODESEALER_DEVELOPMENT}" \
       --set worker.replicaCount="${CODESEALER_WORKERS}" \
       --set manager.enabled=true \
       --wait --timeout=60s
@@ -264,7 +269,11 @@ if [[ "$1" == "install" ]]; then
       echo "########################################################################################"
       echo "#  To access Juice Shop application:"
       echo "#  "
-      echo "#  https://localhost:${INGRESS_PORT}"
+      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
+        echo "#  https://localhost:${INGRESS_NODEPORT}"
+      else
+        echo "#  https://localhost:${INGRESS_PORT}"
+      fi
       echo "########################################################################################"
 
     else
@@ -288,10 +297,11 @@ if [[ "$1" == "install" ]]; then
         --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
         --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
         --set worker.ingress.port="${INGRESS_PORT}" \
+        --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
         --set initContainers.enabled=false \
-        --set environment="${CODESEALER_ENV}" \
+        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
         --wait --timeout=60s
 
       echo "########################################################################################"
@@ -308,9 +318,10 @@ if [[ "$1" == "install" ]]; then
         --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
         --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
         --set worker.ingress.port="${INGRESS_PORT}" \
+        --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-        --set environment="${CODESEALER_ENV}" \
+        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
         --wait --timeout=60s
     fi
 
@@ -342,7 +353,7 @@ if [[ "$1" == "install" ]]; then
     read -r -p 'Restart Ingress Controller? [y/n]: '
     if [[ "${REPLY}" == 'y' ]]; then
 
-      if [[ "${CODESEALER_ENV}" == "DEVELOP" ]]; then
+      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
         sleep 5
@@ -430,8 +441,19 @@ elif [[ "$1" == "upgrade" ]]; then
   echo "########################################################################################"
   echo "#  Upgrading Codesealer Release"
   echo "########################################################################################"
+
+  echo "########################################################################################"
+  echo "#  Configuring Ingress Controller installation - enter Ingress Controller"
+  echo "#  configuration:"
+  echo "########################################################################################"
+  read -r -p 'Ingress Controller Namespace?: '
+  export INGRESS_NAMESPACE="${REPLY}"
+  read -r -p 'Ingress Controller Deployment?: '
+  export INGRESS_DEPLOYMENT="${REPLY}"
+  read -r -p 'Ingress Controller Port?: '
+  export INGRESS_PORT="${REPLY}"
+
   read -r -p 'Which installation mode for Codesealer [hybrid/enterprise]: '
-  # Check if they want the sample application for testing
   if [[ "${REPLY}" == "enterprise" ]]; then
 
     export CODESEALER_MODE="${REPLY}"
@@ -457,7 +479,7 @@ elif [[ "$1" == "upgrade" ]]; then
       --set worker.ingress.port="${INGRESS_PORT}" \
       --set worker.redis.namespace="${REDIS_NAMESPACE}" \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set environment="${CODESEALER_ENV}" \
+      --set development.enabled="${CODESEALER_DEVELOPMENT}" \
       --set worker.replicaCount="${CODESEALER_WORKERS}" \
       --set manager.enabled=true \
       --wait --timeout=60s
@@ -465,6 +487,9 @@ elif [[ "$1" == "upgrade" ]]; then
   else
 
     export CODESEALER_MODE="hybrid"
+
+    read -r -p 'Ingress Controller NodePort?: '
+    export INGRESS_NODEPORT="${REPLY}"
 
     echo "########################################################################################"
     echo "# Redis password: ${REDIS_PASSWORD}"
@@ -481,10 +506,11 @@ elif [[ "$1" == "upgrade" ]]; then
         --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
         --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
         --set worker.ingress.port="${INGRESS_PORT}" \
+        --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
         --set initContainers.enabled=false \
-        --set environment="${CODESEALER_ENV}" \
+        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
         --wait --timeout=60s
 
       echo "########################################################################################"
@@ -501,9 +527,10 @@ elif [[ "$1" == "upgrade" ]]; then
         --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
         --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
         --set worker.ingress.port="${INGRESS_PORT}" \
+        --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-        --set environment="${CODESEALER_ENV}" \
+        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
         --wait --timeout=60s
     fi
 
@@ -535,7 +562,7 @@ elif [[ "$1" == "upgrade" ]]; then
     read -r -p 'Restart Ingress Controller? [y/n]: '
     if [[ "${REPLY}" == 'y' ]]; then
 
-      if [[ "${CODESEALER_ENV}" == "DEVELOP" ]]; then
+      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
         sleep 5

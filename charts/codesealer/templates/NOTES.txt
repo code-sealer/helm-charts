@@ -1,9 +1,9 @@
 {{- if .Values.manager.enabled }}
 The first time core-manager is started, it will create a Maintenance Administrator. 
-To see the credentials for this account, check the core-manager log: 
+To see the credentials for this account, find the admin credential in the core-manager log: 
 
-  $ kubectl get pods -n codesealer-system
-  $ kubectl logs <core-manager-pod> -n codesealer-system | grep password
+  $ POD=$(kubectl get pods -n {{ .Values.ingress.namespace }} | grep core-manager | cut -d " " -f1 )
+  $ kubectl logs ${POD} -n {{ .Values.ingress.namespace }} | grep password
 
   $ kubectl port-forward service/core-manager -n {{ .Values.ingress.namespace }} 8444:8444 &
 
@@ -12,7 +12,11 @@ The manager can be accessed at https://localhost:8444
   1. Log in with admin account and the manager password from the log
   2. Go to Documentation to setup your first endpoint 
 
+{{- if .Values.development.enabled }}
+The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
+{{ else }}
 The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
+{{- end }}
 
 {{ else }}
 To enable Codesealer on Ingress Controller:
@@ -22,6 +26,10 @@ To enable Codesealer on Ingress Controller:
   $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} \
     -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":{{ .Values.worker.ingress.port }}}}}} }'
 
+{{- if .Values.development.enabled }}
+The application can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
+{{ else }}
 The application can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
+{{- end }}
 
 {{- end }}  
