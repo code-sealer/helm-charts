@@ -56,7 +56,7 @@ data:
 
     [[endpoint]]
     disable = {{ .Values.worker.config.endpoint.disable }}
-    {{- if .Values.development.enabled }}
+    {{- if .Values.ingress.nodePort.enabled }}
     remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.nodePort }}"
     {{ else }}
     remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.port }}"

@@ -12,7 +12,7 @@ The manager can be accessed at https://localhost:8444
   1. Log in with admin account and the manager password from the log
   2. Go to Documentation to setup your first endpoint 
 
-{{- if .Values.development.enabled }}
+{{- if .Values.ingress.nodePort.enabled }}
 The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
 {{ else }}
 The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
@@ -26,7 +26,7 @@ To enable Codesealer on Ingress Controller:
   $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} \
     -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":{{ .Values.worker.ingress.port }}}}}} }'
 
-{{- if .Values.development.enabled }}
+{{- if .Values.ingress.nodePort.enabled }}
 The application can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
 {{ else }}
 The application can be accessed at https://localhost:{{ .Values.worker.ingress.port }}

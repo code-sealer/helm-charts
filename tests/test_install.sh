@@ -11,7 +11,7 @@ if [ -z "${CODESEALER_TOKEN}" ]; then
   exit 1
 fi
 
-set -ueo pipefail
+## set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
   echo "####################################################################################################################"
@@ -25,10 +25,11 @@ fi
 clear
 
 # Codesealer Public Helm Repo
-export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
+## export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
+export CODESEALER_HELM_REPO=https://raw.githubusercontent.com/tfarinacci/codesealer-helm/main/
 export CODESEALER_HELM_CHART=codesealer/codesealer
 
-export CODESEALER_HELM_CNI_REPO=https://code-sealer.github.io/helm-charts
+export CODESEALER_HELM_CNI_REPO=https://raw.githubusercontent.com/tfarinacci/codesealer-cni/main/
 export CODESEALER_HELM_CHART_CNI=codesealer-cni/codesealer-cni
 
 # NGINX Ingress Controller Helm Repo
@@ -43,12 +44,12 @@ export REDIS_NAMESPACE=redis
 # Default settings
 INGRESS_PORT=443
 INGRESS_NODEPORT=31443
-CODESEALER_DEVELOPMENT=false
+CODESEALER_NODEPORT=false
 CODESEALER_CNI=false
 
 
 if [[ "$1" == "install" ]]; then
-  # Check which Kubernetes distribution is installed
+
   echo "########################################################################################"
   echo "#  Codesealer installation script"
   echo "#  "
@@ -57,71 +58,166 @@ if [[ "$1" == "install" ]]; then
   echo "#     1. As a sidecar to an Ingress Controller for Cloud Native workloads (hybrid)"
   echo "#     2. As Reverse Proxy Layer in front of an Ingress Controller or API Gateway (enterprise)"
   echo "#  "
-  echo "#  If you do not have an Ingress Controller installed NGINX Ingress will be installed by default"
-  echo "#  "
-  echo "#  This installation also will configure your Ingress Controller to operate in one the "
-  echo "#  following 2 Kubernetes Ingress Controller service types:"
-  echo "#  "
-  echo "#     1. NodePort - DEVELOP (default)"
-  echo "#        Use for local installations that do not support a LoadBalancer configuration."
-  echo "#        This is the default installation mode."
-  echo "#     2. LoadBalancer - PROD"
-  echo "#        Use on Production implementations or local configurations that support routing"
-  echo "#        to local LoadBalancer over port 443.  Some MacBooks using Docker Desktop with"
-  echo "#        Kubernetes support this configuration."
+  echo "#  Both configurations leverage a Kubernetes Ingress Controller.  You have the option of using"
+  echo "#  an existing Ingress Controller or have one installed for you."
   echo "#  "
   echo "########################################################################################"
-  read -r -p 'Which Ingress Controller configuration? [DEVELOP/PROD]: '
-  if [[ "${REPLY}" == [Pp][Rr][Oo][Dd] ]]; then
 
-    # Set environment
-    CODESEALER_DEVELOPMENT=false
-  
+  # Tailor installation based on which Kubernetes distribution is installed
+  read -r -p 'Are you running Minikube for your Kubernetes Cluster? [y/n]: '
+  if [[ "${REPLY}" == [Yy] ]]; then
     echo "########################################################################################"
-    echo "#  Do you wish to install NGINX Ingress Controller using a LoadBalancer configuration?"
+    echo "#  Minikube configuration:"
     echo "#  "
-    echo "#  Documentation: https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx"
+    echo "#  The installation of the Ingress Controller will be skipped and you must specify the"
+    echo "#  the Ingress Controller configuration."
+    echo "#  "
+    echo "#  1. Enable Ingress on your Minkube Cluster:"
+    echo "#       $ minikube addons enable ingress"
+    echo "#  2. Run the following command in a separate terminal to provide connectivity to your"
+    echo "#     application:"
+    echo "#       $ minikube tunnel"
+    echo "#  "
     echo "########################################################################################"
-    read -r -p 'Install NGINX Ingress Controller on port 443? [y/n]: '
-    if [[ "${REPLY}" == 'y' ]]; then
-      echo "########################################################################################"
-      echo "#  Waiting for NGINX Ingress Controller to start"
-      echo "########################################################################################" 
-      helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
-      helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
-      --namespace ${INGRESS_NAMESPACE} --create-namespace \
-      --wait --timeout=60s
-
-    else
-      echo "########################################################################################"
-      echo "#  Skipping NGINX Production Ingress Controller installation"
-      echo "########################################################################################"
-    fi
-
   else
+    read -r -p 'Would you like to install a Kind Cluster for your Kubernetes Cluster? [y/n]: '
+    if [[ "${REPLY}" == [Yy] ]]; then
 
-    # Set environment
-    CODESEALER_DEVELOPMENT=true
+    cat <<EOF | kind create cluster --config=-
+    kind: Cluster
+    apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+      kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+EOF
 
+    fi
+  fi
+
+  echo "########################################################################################"
+  echo "#  Kubernetes Ingress Controller installation options:"
+  echo "#  "
+  echo "#  The following Kubernetes Ingress Controllers are supported:"
+  echo "#  "
+  echo "#   1. Minikube Ingress Addon: https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/"
+  echo "#   2. NGINX Ingress Controller: https://docs.nginx.com/nginx-ingress-controller/"
+  echo "#   3. Contour Ingress Controller: https://projectcontour.io/docs/v1.10.0/"
+  echo "#   4. Istio Ingress Gateway: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/"
+  echo "#   5. Public Cloud Ingress Controllers"
+  echo "#  "
+  echo "#  NOTE: If you are running Minikube you should use the Ingress addon option instead and"
+  echo "#        skip this step."
+  echo "#  "
+  echo "########################################################################################"
+  read -r -p 'Do you wish to install the NGINX Ingress Controller on your Kubernetes Cluster? [y/n]: '
+  if [[ "${REPLY}" == [Nn] ]]; then
     echo "########################################################################################"
-    echo "#  Configuring NGINX Ingress Controller using a NodePort configuration?"
+    echo "#  Skipping NGINX Ingress Controller installation - enter existing Ingress"
+    echo "#  Controller configuration:"
+    echo "########################################################################################"
+    read -r -p 'Ingress Controller Namespace? [ingress-nginx]: '
+    if [ -z "${REPLY}" ]; then
+      export INGRESS_NAMESPACE="${INGRESS_NAMESPACE}"
+    else
+      export INGRESS_NAMESPACE="${REPLY}"
+    fi
+    read -r -p 'Ingress Controller Deployment? [ingress-nginx-controller]: '
+    if [ -z "${REPLY}" ]; then
+      export INGRESS_DEPLOYMENT="${INGRESS_DEPLOYMENT}"
+    else
+      export INGRESS_DEPLOYMENT="${REPLY}"
+    fi
+    read -r -p 'Ingress Controller Port? [443]: '
+    if [ -z "${REPLY}" ]; then
+      export INGRESS_PORT="${INGRESS_PORT}"
+    else
+      export INGRESS_PORT="${REPLY}"
+    fi
+  else
+    echo "########################################################################################"
+    echo "#  Installing NGINX Ingress Controller using Helm Chart"
     echo "#  "
-    echo "#  Use this configuration for local deploments where a LoadBalancer cannot be exposed."
+    echo "#  This installation also will configure your NGINX Ingress Controller to operate in one the"
+    echo "#  following 2 Kubernetes Ingress Controller service types:"
+    echo "#  "
+    echo "#     1. LoadBalancer (default)"
+    echo "#        Use on Production implementations or local configurations that support routing"
+    echo "#        to local LoadBalancer over port 443."  
+    echo "#        - MacBooks using Docker Desktop with Kubernetes may support this configuration."
+    echo "#        - This configuration works best with a Kubernetes Kind Cluster"
+    echo "#     2. NodePort"
+    echo "#        Use for local installations that do not support a LoadBalancer configuration."
+    echo "#        - Use this configuration if LoadBalancer does not work."
     echo "#  "
     echo "#  Documentation: https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx"
     echo "########################################################################################"
-    read -r -p "Which port do you want NGINX Ingress Controller NodePort to use: [${INGRESS_NODEPORT}] "
-    if [ -z "${REPLY}" ]; then
-      # Set Ingress Controller port
-      echo "Using default NodePort: ${INGRESS_NODEPORT}"
-      export INGRESS_NODEPORT=${INGRESS_NODEPORT}
-    else
-      # Set Ingress Controller port
-      export INGRESS_NODEPORT=${REPLY}
-    fi
+    read -r -p 'Install Ingress Controller as LoadBalancer? [y/n]: '
+    if [[ "${REPLY}" == [Yy] ]]; then
 
-    read -r -p "Install NGINX Ingress Controller using a NodePort on port ${INGRESS_NODEPORT} [y/n]: "
-    if [[ "${REPLY}" == 'y' ]]; then
+      # NodePort is disabled
+      CODESEALER_NODEPORT=false
+    
+      helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
+
+      read -r -p 'Installing on a Kind Cluster? [y/n]: '
+      if [[ "${REPLY}" == [Yy] ]]; then
+        echo "########################################################################################"
+        echo "#  Waiting for NGINX Ingress Controller to start on Kind Cluster"
+        echo "########################################################################################" 
+        # Kind Cluster configuration
+        helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
+        --namespace ${INGRESS_NAMESPACE} --create-namespace \
+        --set controller.hostPort.enabled=true \
+        --set controller.service.type=NodePort \
+        --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
+        --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
+        --wait --timeout=60s
+
+        # Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error
+        CA=$(kubectl -n ${INGRESS_NAMESPACE} get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
+        kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
+      else
+        echo "########################################################################################"
+        echo "#  Waiting for NGINX Ingress Controller to start"
+        echo "########################################################################################"
+        # Other Clusters 
+        helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
+        --namespace ${INGRESS_NAMESPACE} --create-namespace \
+        --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
+        --wait --timeout=60s
+      fi
+
+    else
+      # NodePort is enabled
+      CODESEALER_NODEPORT=true
+
+      echo "########################################################################################"
+      echo "#  Configuring NGINX Ingress Controller using a NodePort configuration?"
+      echo "#  "
+      echo "#  Use this configuration for local deploments where a LoadBalancer cannot be exposed."
+      echo "#  "
+      echo "########################################################################################"
+      read -r -p "Which port do you want NGINX Ingress Controller NodePort to use: [${INGRESS_NODEPORT}] "
+      if [ -z "${REPLY}" ]; then
+        # Set Ingress Controller nodePort
+        echo "Using default NodePort: ${INGRESS_NODEPORT}"
+        export INGRESS_NODEPORT=${INGRESS_NODEPORT}
+      else
+        # Set Ingress Controller nodePort
+        export INGRESS_NODEPORT=${REPLY}
+      fi
 
       echo "########################################################################################"
       echo "#  Waiting for NGINX Ingress Controller to start"
@@ -136,26 +232,10 @@ if [[ "$1" == "install" ]]; then
       --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
       --wait --timeout=60s
 
-    # Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error
-    CA=$(kubectl -n ${INGRESS_NAMESPACE} get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
-    kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
-
-    else
-
-      echo "########################################################################################"
-      echo "#  Skipping NGINX Development Ingress Controller installation - enter Ingress Controller"
-      echo "#  configuration:"
-      echo "########################################################################################"
-      read -r -p 'Ingress Controller Namespace?: '
-      export INGRESS_NAMESPACE="${REPLY}"
-      read -r -p 'Ingress Controller Deployment?: '
-      export INGRESS_DEPLOYMENT="${REPLY}"
-      read -r -p 'Ingress Controller Port?: '
-      export INGRESS_PORT="${REPLY}"
-      read -r -p 'Ingress Controller NodePort?: '
-      export INGRESS_NODEPORT="${REPLY}"
+      # Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error
+      CA=$(kubectl -n ${INGRESS_NAMESPACE} get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
+      kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
     fi
-
   fi
 
   echo "########################################################################################"
@@ -168,7 +248,7 @@ if [[ "$1" == "install" ]]; then
   echo "#      Documentation: https://github.com/bitnami/charts/blob/main/bitnami/redis/README.md"
   echo "########################################################################################"
   read -r -p 'Install Redis in single master mode [y/n]: '
-  if [[ "${REPLY}" == 'y' ]]; then
+  if [[ "${REPLY}" == [Yy] ]]; then
 
     echo "########################################################################################"
     echo "#  Waiting for Redis to start"
@@ -236,7 +316,7 @@ if [[ "$1" == "install" ]]; then
       --set worker.ingress.port="${INGRESS_PORT}" \
       --set worker.redis.namespace="${REDIS_NAMESPACE}" \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+      --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
       --set worker.replicaCount="${CODESEALER_WORKERS}" \
       --set manager.enabled=true \
       --wait --timeout=60s
@@ -252,7 +332,7 @@ if [[ "$1" == "install" ]]; then
     echo "########################################################################################"
     read -r -p 'Install OWASP Juice Shop [y/n]: '
 
-    if [[ "${REPLY}" == 'y' ]]; then
+    if [[ "${REPLY}" == [Yy] ]]; then
       helm repo add securecodebox https://charts.securecodebox.io/
 
       echo "########################################################################################"
@@ -269,7 +349,7 @@ if [[ "$1" == "install" ]]; then
       echo "########################################################################################"
       echo "#  To access Juice Shop application:"
       echo "#  "
-      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
+      if [[ "${CODESEALER_NODEPORT}" == true ]]; then
         echo "#  https://localhost:${INGRESS_NODEPORT}"
       else
         echo "#  https://localhost:${INGRESS_PORT}"
@@ -301,7 +381,7 @@ if [[ "$1" == "install" ]]; then
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
         --set initContainers.enabled=false \
-        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+        --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
         --wait --timeout=60s
 
       echo "########################################################################################"
@@ -321,7 +401,7 @@ if [[ "$1" == "install" ]]; then
         --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+        --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
         --wait --timeout=60s
     fi
 
@@ -351,9 +431,10 @@ if [[ "$1" == "install" ]]; then
     echo "#  restart"
     echo "########################################################################################"
     read -r -p 'Restart Ingress Controller? [y/n]: '
-    if [[ "${REPLY}" == 'y' ]]; then
+    if [[ "${REPLY}" == [Yy] ]]; then
 
-      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
+      read -r -p 'Force restart Ingress Controller? [y/n]: '
+      if [[ "${REPLY}" == [Yy] ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
         sleep 5
@@ -392,7 +473,7 @@ elif [[ "$1" == "uninstall" ]]; then
   echo "#  Do you wish to uninstall OWASP Juice Shop Application?"
   echo "########################################################################################"
   read -r -p 'Uninstall OWASP Juice Shop [y/n]: '
-  if [[ "${REPLY}" == 'y' ]]; then
+  if [[ "${REPLY}" == [Yy] ]]; then
     helm uninstall juice-shop --namespace juice-shop
     helm repo remove securecodebox
     kubectl delete namespace juice-shop
@@ -406,7 +487,7 @@ elif [[ "$1" == "uninstall" ]]; then
   echo "#  Do you wish to uninstall Redis?"
   echo "########################################################################################"
   read -r -p 'Uninstall Redis [y/n]: '
-  if [ "${REPLY}" == 'y' ]; then
+  if [[ "${REPLY}" == [Yy] ]]; then
     helm uninstall redis --namespace redis 
     kubectl delete namespace redis
   else
@@ -419,7 +500,7 @@ elif [[ "$1" == "uninstall" ]]; then
   echo "#  Do you wish to uninstall NGINX Ingress Controller?"
   echo "########################################################################################"
   read -r -p 'Uninstall NGINX Ingress Controller [y/n]: '
-  if [ "${REPLY}" == 'y' ]; then
+  if [[ "${REPLY}" == [Yy] ]]; then
     helm uninstall ${INGRESS_HELM_CHART} --namespace ${INGRESS_NAMESPACE}
     helm repo remove ${INGRESS_HELM_CHART}
     sleep 5
@@ -479,7 +560,7 @@ elif [[ "$1" == "upgrade" ]]; then
       --set worker.ingress.port="${INGRESS_PORT}" \
       --set worker.redis.namespace="${REDIS_NAMESPACE}" \
       --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-      --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+      --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
       --set worker.replicaCount="${CODESEALER_WORKERS}" \
       --set manager.enabled=true \
       --wait --timeout=60s
@@ -510,7 +591,7 @@ elif [[ "$1" == "upgrade" ]]; then
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
         --set initContainers.enabled=false \
-        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+        --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
         --wait --timeout=60s
 
       echo "########################################################################################"
@@ -530,7 +611,7 @@ elif [[ "$1" == "upgrade" ]]; then
         --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
         --set worker.redis.namespace="${REDIS_NAMESPACE}" \
         --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-        --set development.enabled="${CODESEALER_DEVELOPMENT}" \
+        --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
         --wait --timeout=60s
     fi
 
@@ -560,9 +641,10 @@ elif [[ "$1" == "upgrade" ]]; then
     echo "#  restart"
     echo "########################################################################################"
     read -r -p 'Restart Ingress Controller? [y/n]: '
-    if [[ "${REPLY}" == 'y' ]]; then
+    if [[ "${REPLY}" == [Yy] ]]; then
 
-      if [[ "${CODESEALER_DEVELOPMENT}" == true ]]; then
+      read -r -p 'Force restart Ingress Controller? [y/n]: '
+      if [[ "${REPLY}" == [Yy] ]]; then
         # Use force delete instead
         kubectl scale deployment "${INGRESS_DEPLOYMENT}" --namespace "${INGRESS_NAMESPACE}" --replicas=0
         sleep 5
