@@ -5,6 +5,8 @@ To see the credentials for this account, find the admin credential in the core-m
   $ POD=$(kubectl get pods -n {{ .Values.ingress.namespace }} | grep core-manager | cut -d " " -f1 )
   $ kubectl logs ${POD} -n {{ .Values.ingress.namespace }} | grep password
 
+To access the Codesealer Manager:
+
   $ kubectl port-forward service/core-manager -n {{ .Values.ingress.namespace }} 8444:8444 &
 
 The manager can be accessed at https://localhost:8444
