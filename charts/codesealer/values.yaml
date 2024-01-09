@@ -302,10 +302,6 @@ worker:
       # bootPrefix must start and end with '/', and can only contain characters
       # 'A-Za-z0-9_.~-'.
       bootPrefix: "/~bl/"
-      # This option can be set to 'true' in order to run the Worker in "standalone" mode. Each
-      # endpoint can then be configured in this file (see the 'endpoint' section below), instead
-      # of configuring them through the Management Portal.
-      # fsEndpoints: true
       # Can be set to "redis" or "local". For "redis", state is shared amongst
       # workers through the configured Redis instance. With "local", state is stored
       # in memory in the worker. The "redis" instance is required for sharing
