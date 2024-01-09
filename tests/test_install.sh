@@ -11,7 +11,7 @@ if [ -z "${CODESEALER_TOKEN}" ]; then
   exit 1
 fi
 
-## set -ueo pipefail
+set -ueo pipefail
 
 if [[ "$#" -ne 1 ]]; then
   echo "####################################################################################################################"
@@ -25,11 +25,10 @@ fi
 clear
 
 # Codesealer Public Helm Repo
-## export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
-export CODESEALER_HELM_REPO=https://raw.githubusercontent.com/tfarinacci/codesealer-helm/main/
+export CODESEALER_HELM_REPO=https://code-sealer.github.io/helm-charts
 export CODESEALER_HELM_CHART=codesealer/codesealer
 
-export CODESEALER_HELM_CNI_REPO=https://raw.githubusercontent.com/tfarinacci/codesealer-cni/main/
+export CODESEALER_HELM_CNI_REPO=https://code-sealer.github.io/helm-charts
 export CODESEALER_HELM_CHART_CNI=codesealer-cni/codesealer-cni
 
 # NGINX Ingress Controller Helm Repo
