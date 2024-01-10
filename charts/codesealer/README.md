@@ -1,18 +1,32 @@
 # Codesealer Ingress Sidecar Helm Chart
 
-This Helm chart installs [Codesealer](https://codesealer.com) as a sidecar to an
-existing ingress deployment. This enabled automatic protection of the application behind
-the ingress.
+This Helm chart installs [Codesealer](https://codesealer.com) as a sidecar to an existing application
+using a Kubernetes Ingress Controller. Codesealer is injected into the same pod as the Ingress Controller
+and through an iptables preroute, Codesealer intercepts the traffic destined for the Ingress Controller and
+procects the code and APIs exposed by the application.
 
-This installation also will configure your Ingress Controller to operate in one the following
-2 modes:
-   1. NodePort - DEVELOP
+Like an Istio Service Mesh, the Codesealer sidecar can be injected through the following methods:
+  1. `initContainer` - requires `NET_ADMIN` privilege (default)
+  2. Container Network Interface (`CNI`)
+      - enabled by "--set initContainers.enabled=false" when installing the Helm Chart
+
+The following Kubernetes Ingress Controllers are supported:
+  1. Minikube Ingress Addon: https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
+  2. NGINX Ingress Controller: https://docs.nginx.com/nginx-ingress-controller/
+  3. Contour Ingress Controller: https://projectcontour.io/docs/v1.10.0/
+  4. Istio Ingress Gateway: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
+  5. Public Cloud Ingress Controllers
+
+This installation also will configure your NGINX Ingress Controller to operate with one the
+following 2 Kubernetes Ingress Controller service types:
+  1.  `LoadBalancer` (default)
+      Use on Production implementations or local configurations that support routing
+      to local LoadBalancer over port 443.
+      - MacBooks using Docker Desktop with Kubernetes may support this configuration
+      - This configuration works best with a Kubernetes Kind Cluster
+  2.  `NodePort`
       Use for local installations that do not support a LoadBalancer configuration.
-      This is the default installation mode.
-   2. LoadBalancer - PROD
-      used on Production implementations or local configurations that support routing
-      to local LoadBalancer over port 443.  Some MacBooks using Docker Desktop with
-      Kubernetes support this configuration.
+      - Use this configuration if LoadBalancer option does not work
 
 ## Prerequisites
 
@@ -37,12 +51,10 @@ export INGRESS_NAMESPACE=ingress-nginx
 export INGRESS_DEPLOYMENT=ingress-nginx-controller
 export INGRESS_PORT=443
 export INGRESS_NODEPORT=31443
-export CODESEALER_ENV=DEVELOP
-export CODESEALER_CNI=false
 ```
 
 Additionally you will need an ingress and an application to protect. Below are steps to
-get started with a demo application and an Nginx Ingress. For guides on how to use this
+get started with a demo application and an NGINX Ingress. For guides on how to use this
 Helm chart with specific Kubernetes implementations, see the ["Kubernetes Implementation
 Specifics"](#kubernetes-implementation-specifics) section.
 
@@ -77,6 +89,13 @@ helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 >
 > See also the notes on Kind in the ["Kubernetes Implementation
 > Specifics"](#kubernetes-implementation-specifics) section.
+
+> NOTE: If you using Minikube it works best with the Ingress addon
+>
+> ```bash
+> minikube addons enable ingress
+> minikube tunnel
+> ```
 
 ### Target Application
 
@@ -129,15 +148,18 @@ To install the Codesealer Helm chart, please ensure the prerequisite parametes a
 and run the following commands:
 
 ```bash
-helm repo add codesealer https://code-sealer.github.io/helm-charts
-helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer-system \
+helm repo add codesealer ${CODESEALER_HELM_REPO}
+helm install codesealer ${CODESEALER_HELM_CHART} \
+  --create-namespace --namespace codesealer-system \
   --set codesealerToken="${CODESEALER_TOKEN}" \
-  --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
-  --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
-  --set worker.ingress.port=${INGRESS_PORT} \
-  --set worker.redis.namespace=${REDIS_NAMESPACE} \
+  --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
+  --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
+  --set worker.ingress.port="${INGRESS_PORT}" \
+  --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
+  --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --wait --timeout=90s
+  --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
+  --wait --timeout=60s
 ```
 
 To enable Codesealer protection, please ensure the prerequisite parametes are defined
@@ -145,7 +167,8 @@ and run the following commands:
 
 ```bash
 kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled
-kubectl patch deployment ${INGRESS_DEPLOYMENT} -n ${INGRESS_NAMESPACE} -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
+kubectl patch deployment "${INGRESS_DEPLOYMENT}" -n "${INGRESS_NAMESPACE}" \
+  -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":"'${INGRESS_PORT}'"}}}} }'
 ```
 
 Finally, restart your ingress deployment if they do not restart automatically:
@@ -161,8 +184,9 @@ To see what Codesealer helm parameters are available issue the following command
 helm show values codesealer/codesealer
 ```
 
-Codesealer has the following default settings which affect Redis and WAF:
+Codesealer has the following default settings which affect the injection method, Redis, and WAF:
 
+  --set initContainers.enabled=true \
   --set worker.redis.service.name=redis-master \
   --set worker.config.bootloader.redisUser=default \
   --set worker.config.bootloader.redisUseTLS=false \
@@ -176,16 +200,18 @@ Codesealer has the following default settings which affect Redis and WAF:
 >       following commands:
 >
 > ```bash
-> helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer-system \
+> helm install codesealer ${CODESEALER_HELM_CHART} \
+>   --create-namespace --namespace codesealer-system \
 >   --set codesealerToken="${CODESEALER_TOKEN}" \
->   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
->   --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
->   --set worker.ingress.port=${INGRESS_PORT} \
->   --set worker.redis.namespace=${REDIS_NAMESPACE} \
+>   --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
+>   --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
+>   --set worker.ingress.port="${INGRESS_PORT}" \
+>   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set environment=${CODESEALER_ENV} \
+>   --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}"
+>   --set worker.replicaCount="${CODESEALER_WORKERS}" \
 >   --set manager.enabled=true \
->   --wait --timeout=90s
+>   --wait --timeout=60s
 > ```
 >
 >  NOTE: To access local manager issue the following command:
@@ -210,15 +236,17 @@ and run the following command instead:
 
 ```bash
 helm repo update codesealer
-helm upgrade codesealer codesealer/codesealer --namespace codesealer-system \
+helm upgrade codesealer ${CODESEALER_HELM_CHART} \
+  --namespace codesealer-system \
   --set codesealerToken="${CODESEALER_TOKEN}" \
-  --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
-  --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
-  --set worker.ingress.port=${INGRESS_PORT} \
-  --set worker.redis.namespace=${REDIS_NAMESPACE} \
+  --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
+  --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
+  --set worker.ingress.port="${INGRESS_PORT}" \
+  --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
+  --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set environment=${CODESEALER_ENV} \
-  --wait --timeout=90s
+  --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
+  --wait --timeout=60s
 ```
 
 Then restart the Codesealer deployment with the following command:
@@ -234,16 +262,18 @@ kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NA
 >       following command instead:
 >
 > ```bash
-> helm upgrade codesealer codesealer/codesealer --namespace codesealer-system \
+> helm upgrade codesealer ${CODESEALER_HELM_CHART} \
+>   --create-namespace --namespace codesealer-system \
 >   --set codesealerToken="${CODESEALER_TOKEN}" \
->   --set worker.ingress.namespace=${INGRESS_NAMESPACE} \
->   --set worker.ingress.deployment=${INGRESS_DEPLOYMENT} \
->   --set worker.ingress.port=${INGRESS_PORT} \
->   --set worker.redis.namespace=${REDIS_NAMESPACE} \
+>   --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
+>   --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
+>   --set worker.ingress.port="${INGRESS_PORT}" \
+>   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set environment=${CODESEALER_ENV} \
+>   --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
+>   --set worker.replicaCount="${CODESEALER_WORKERS}" \
 >   --set manager.enabled=true \
->   --wait --timeout=90s
+>   --wait --timeout=60s
 > ```
 
 ## Uninstalling
@@ -287,6 +317,12 @@ nodes:
   - containerPort: 443
     hostPort: 443
     protocol: TCP
+```
+
+Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error
+```bash
+CA=$(kubectl -n ${INGRESS_NAMESPACE} get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
+kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
 ```
 
 <a class="btn btn-primary" href="https://kind.sigs.k8s.io/docs/user/quick-start/" role="button" aria-label="View kind Quick Start Guide">View kind Quick Start Guide</a>
