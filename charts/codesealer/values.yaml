@@ -30,10 +30,6 @@ initContainers:
   image: codesealer-init-networking
   tag: latest
 
-# Deplopyment configuration [Production/Development]
-development: 
-  enabled: true
-
 webhook:
   name: codesealer-mutating-webhook
   replicaCount: 1
@@ -823,7 +819,6 @@ serviceAccount:
 manager:
   enabled: false
   name: core-manager
-  replicaCount: 1
   restartPolicy: Always
   image: release/core-manager
   tag: latest
@@ -945,6 +940,9 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     kubernetes.io/ingress.class: nginx
     kubernetes.io/tls-acme: "true"
+  # For implementation that don't support a LoadBalancer
+  nodePort: 
+    enabled: false
 
   hosts:
     - host: localhost

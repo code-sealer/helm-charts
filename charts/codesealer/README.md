@@ -3,12 +3,25 @@
 This Helm chart installs [Codesealer](https://codesealer.com) as a sidecar to an existing application
 using a Kubernetes Ingress Controller. Codesealer is injected into the same pod as the Ingress Controller
 and through an iptables preroute, Codesealer intercepts the traffic destined for the Ingress Controller and
-procects the code and APIs exposed by the application.
+protects the code and APIs exposed by the application.
 
 Like an Istio Service Mesh, the Codesealer sidecar can be injected through the following methods:
   1. `initContainer` - requires `NET_ADMIN` privilege (default)
   2. Container Network Interface (`CNI`)
       - enabled by "--set initContainers.enabled=false" when installing the Helm Chart
+
+## Prerequisites
+
+To use this Helm chart you will need an access token for the Codesealer Docker registry.
+In the following we assume that the access token is set in the following way:
+
+```bash
+export CODESEALER_TOKEN=<access token>
+```
+
+This installation requires a Kubernetes Cluster with kubectl.  
+
+### Ingress
 
 The following Kubernetes Ingress Controllers are supported:
   1. Minikube Ingress Addon: https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
@@ -27,19 +40,7 @@ following 2 Kubernetes Ingress Controller service types:
   2.  `NodePort`
       Use for local installations that do not support a LoadBalancer configuration.
       - Use this configuration if LoadBalancer option does not work
-
-## Prerequisites
-
-To use this Helm chart you will need an access token for the Codesealer Docker registry.
-In the following we assume that the access token is set in the following way:
-
-```bash
-export CODESEALER_TOKEN=<access token>
-```
-
-This installation requires a Kubernetes Cluster with kubectl.  
-
-### Ingress
+      - Enabled by setting CODESEALER_NODEPORT=true
 
 To use this Helm chart you will also need to set the following variables to match
 your Ingress Controller's deployment on your Kubernetes Cluster:
@@ -60,7 +61,7 @@ Specifics"](#kubernetes-implementation-specifics) section.
 
 This Helm chart will install Codesealer as a sidecar to an existing ingress deployment.
 
-If you don't have an ingress already, you can install an [Nginx Ingress Controller](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx) 
+If you don't have an ingress already, you can install an [NGINX Ingress Controller](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx) 
 using the following command:
 
 ```bash
@@ -144,8 +145,7 @@ export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis 
 
 ## Installing
 
-To install the Codesealer Helm chart, please ensure the prerequisite parametes are defined
-and run the following commands:
+To install the Codesealer Helm chart, please ensure the prerequisite parametes are defined and run the following commands:
 
 ```bash
 helm repo add codesealer ${CODESEALER_HELM_REPO}
@@ -158,7 +158,6 @@ helm install codesealer ${CODESEALER_HELM_CHART} \
   --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
   --wait --timeout=60s
 ```
 
@@ -187,6 +186,7 @@ helm show values codesealer/codesealer
 Codesealer has the following default settings which affect the injection method, Redis, and WAF:
 
   --set initContainers.enabled=true \
+  --set ingress.nodePort.enabled=false \
   --set worker.redis.service.name=redis-master \
   --set worker.config.bootloader.redisUser=default \
   --set worker.config.bootloader.redisUseTLS=false \
@@ -195,6 +195,12 @@ Codesealer has the following default settings which affect the injection method,
   --set worker.config.endpoint.enableWaf=true \
   --set worker.config.endpoint.wafFullTransaction=true \
   --set worker.config.endpoint.crs.paranoiaLevel=1 \
+
+> NOTE: To enable Codesealer to work with a, Ingress Controller using a NodePort issue the following command:
+>
+> ```bash
+> export CODESEALER_NODEPORT=true
+> ```
 
 > NOTE: If you would like to install Codesealer in `enterprise` mode (with a local Manager) issue the
 >       following commands:
