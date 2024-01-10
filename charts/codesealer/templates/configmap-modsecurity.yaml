@@ -4,7 +4,7 @@ metadata:
   name: modsecurity-conf
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if not .Values.manager.enabled }}
+  {{- if .Values.sidecar.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.ingress.namespace }}
@@ -17,7 +17,7 @@ data:
     # only to start with, because that minimises the chances of post-installation
     # disruption.
     #
-    SecRuleEngine {{ .Values.worker.config.endpoint.modsecurity.SecRuleEngine }}
+    SecRuleEngine {{ .Values.worker.config.modsecurity.SecRuleEngine }}
 
 
     # -- Request body handling ---------------------------------------------------
@@ -26,7 +26,7 @@ data:
     # won't be able to see any POST parameters, which opens a large security
     # hole for attackers to exploit.
     #
-    SecRequestBodyAccess {{ .Values.worker.config.endpoint.modsecurity.SecRequestBodyAccess }}
+    SecRequestBodyAccess {{ .Values.worker.config.modsecurity.SecRequestBodyAccess }}
 
 
     # Enable XML request body parser.
@@ -55,15 +55,15 @@ data:
     # to the size of data, with files excluded. You want to keep that value as
     # low as practical.
     #
-    SecRequestBodyLimit {{ .Values.worker.config.endpoint.modsecurity.SecRequestBodyLimit }}
-    SecRequestBodyNoFilesLimit {{ .Values.worker.config.endpoint.modsecurity.SecRequestBodyNoFilesLimit }}
+    SecRequestBodyLimit {{ .Values.worker.config.modsecurity.SecRequestBodyLimit }}
+    SecRequestBodyNoFilesLimit {{ .Values.worker.config.modsecurity.SecRequestBodyNoFilesLimit }}
 
     # What to do if the request body size is above our configured limit.
     # Keep in mind that this setting will automatically be set to ProcessPartial
     # when SecRuleEngine is set to DetectionOnly mode in order to minimize
     # disruptions when initially deploying ModSecurity.
     #
-    SecRequestBodyLimitAction {{ .Values.worker.config.endpoint.modsecurity.SecRequestBodyLimitAction }}
+    SecRequestBodyLimitAction {{ .Values.worker.config.modsecurity.SecRequestBodyLimitAction }}
 
     # Verify that we've correctly processed the request body.
     # As a rule of thumb, when failing to process a request body
@@ -166,7 +166,7 @@ data:
     # Do keep in mind that enabling this directive does increases both
     # memory consumption and response latency.
     #
-    SecResponseBodyAccess {{ .Values.worker.config.endpoint.modsecurity.SecResponseBodyAccess }}
+    SecResponseBodyAccess {{ .Values.worker.config.modsecurity.SecResponseBodyAccess }}
 
     # Which response MIME types do you want to inspect? You should adjust the
     # configuration below to catch documents but avoid static files
@@ -175,13 +175,13 @@ data:
     SecResponseBodyMimeType text/plain text/html text/xml
 
     # Buffer response bodies of up to 512 KB in length.
-    SecResponseBodyLimit {{ .Values.worker.config.endpoint.modsecurity.SecResponseBodyLimit }}
+    SecResponseBodyLimit {{ .Values.worker.config.modsecurity.SecResponseBodyLimit }}
 
     # What happens when we encounter a response body larger than the configured
     # limit? By default, we process what we have and let the rest through.
     # That's somewhat less secure, but does not break any legitimate pages.
     #
-    SecResponseBodyLimitAction {{ .Values.worker.config.endpoint.modsecurity.SecResponseBodyLimitAction }}
+    SecResponseBodyLimitAction {{ .Values.worker.config.modsecurity.SecResponseBodyLimitAction }}
 
 
     # -- Filesystem configuration ------------------------------------------------
@@ -228,7 +228,7 @@ data:
     # and notice messages from the error log.
     #
     #SecDebugLog /opt/modsecurity/var/log/debug.log
-    #SecDebugLogLevel {{ .Values.worker.config.endpoint.modsecurity.SecDebugLogLevel }}
+    #SecDebugLogLevel {{ .Values.worker.config.modsecurity.SecDebugLogLevel }}
 
 
     # -- Audit log configuration -------------------------------------------------
@@ -237,11 +237,11 @@ data:
     # trigger a server error (determined by a 5xx or 4xx, excluding 404,  
     # level response status codes).
     #
-    SecAuditEngine {{ .Values.worker.config.endpoint.modsecurity.SecAuditEngine }}
-    SecAuditLogRelevantStatus {{ .Values.worker.config.endpoint.modsecurity.SecAuditLogRelevantStatus | quote }}
+    SecAuditEngine {{ .Values.worker.config.modsecurity.SecAuditEngine }}
+    SecAuditLogRelevantStatus {{ .Values.worker.config.modsecurity.SecAuditLogRelevantStatus | quote }}
 
     # Log everything we know about a transaction.
-    SecAuditLogParts {{ .Values.worker.config.endpoint.modsecurity.SecAuditLogParts }}
+    SecAuditLogParts {{ .Values.worker.config.modsecurity.SecAuditLogParts }}
 
     # Use a single file for logging. This is much easier to look at, but
     # assumes that you will use the audit log only ocassionally.
@@ -279,4 +279,4 @@ data:
     # The following information will be shared: ModSecurity version,
     # Web Server version, APR version, PCRE version, Lua version, Libxml2
     # version, Anonymous unique id for host.
-    SecStatusEngine {{ .Values.worker.config.endpoint.modsecurity.SecStatusEngine }}
+    SecStatusEngine {{ .Values.worker.config.modsecurity.SecStatusEngine }}

@@ -1,4 +1,4 @@
-{{- if .Values.manager.enabled -}}
+{{- if .Values.sidecar.enabled -}}
 {{ $tls := fromYaml ( include "ingress.gen-certs" . ) }}
 {{- if .Values.ingress.secret.create }}
 ---

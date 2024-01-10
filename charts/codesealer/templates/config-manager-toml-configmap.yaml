@@ -1,15 +1,10 @@
-{{- if .Values.manager.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-manager-toml
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if not .Values.manager.enabled }}
-  namespace: {{ .Values.worker.ingress.namespace }}
-  {{ else }}
   namespace: {{ .Values.ingress.namespace }}
-  {{- end }}
 data:
   config.toml: |     
     [manager]
@@ -34,4 +29,3 @@ data:
     influxAddress = {{ .Values.influxDB.influxAddress | quote }}
     influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
-{{- end }}

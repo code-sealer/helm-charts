@@ -81,6 +81,7 @@ helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
 > ```bash
 > helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 > helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
+>   --namespace ${INGRESS_NAMESPACE} --create-namespace \
 >   --set controller.hostPort.enabled=true \
 >   --set controller.service.type=NodePort \
 >   --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
@@ -158,6 +159,7 @@ helm install codesealer ${CODESEALER_HELM_CHART} \
   --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+  --set sidecar.enabled=true \
   --wait --timeout=60s
 ```
 
@@ -183,43 +185,20 @@ To see what Codesealer helm parameters are available issue the following command
 helm show values codesealer/codesealer
 ```
 
-Codesealer has the following default settings which affect the injection method, Redis, and WAF:
+To access local manager issue the following command:
 
-  --set initContainers.enabled=true \
-  --set ingress.nodePort.enabled=false \
-  --set worker.redis.service.name=redis-master \
-  --set worker.config.bootloader.redisUser=default \
-  --set worker.config.bootloader.redisUseTLS=false \
-  --set worker.config.bootloader.redisIgnoreTLS=true \
-  --set worker.config.endpoint.wafMonitorMode=false \
-  --set worker.config.endpoint.enableWaf=true \
-  --set worker.config.endpoint.wafFullTransaction=true \
-  --set worker.config.endpoint.crs.paranoiaLevel=1 \
+ ```bash
+kubectl port-forward service/core-manager -n codesealer-system 8444:8444 &
+ ```
+ You can access the manager at https://localhost:8444
 
-> NOTE: If you would like to install Codesealer in `enterprise` mode (with a local Manager) issue the
->       following commands:
->
-> ```bash
-> helm install codesealer ${CODESEALER_HELM_CHART} \
->   --create-namespace --namespace codesealer-system \
->   --set codesealerToken="${CODESEALER_TOKEN}" \
->   --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
->   --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
->   --set worker.ingress.port="${INGRESS_PORT}" \
->   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
->   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set worker.replicaCount="${CODESEALER_WORKERS}" \
->   --set manager.enabled=true \
->   --wait --timeout=60s
-> ```
->
->  NOTE: To access local manager issue the following command:
->
-> ```bash
->kubectl port-forward service/core-manager -n ${INGRESS_NAMESPACE} 84444:8444 &
-> ```
-> You can access the manager at https://localhost:8444
->
+The first time core-manager is started, it will create a Maintenance Administrator. 
+To see the credentials for this account, find the admin credential in the core-manager log: 
+
+```bash
+POD=$(kubectl get pods -n codesealer-system | grep core-manager | cut -d " " -f1 )
+kubectl logs ${POD} -n codesealer-system | grep password
+```
 
 ## Upgrading
 
@@ -244,6 +223,7 @@ helm upgrade codesealer ${CODESEALER_HELM_CHART} \
   --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
+  --set sidecar.enabled=true \
   --wait --timeout=60s
 ```
 
@@ -255,23 +235,6 @@ kubectl rollout status deployments --namespace codesealer-system
 kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
 kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
 ```
-
-> NOTE: If you would like to upgrade Codesealer in `enterprise` mode (with a local Manager) issue the
->       following command instead:
->
-> ```bash
-> helm upgrade codesealer ${CODESEALER_HELM_CHART} \
->   --create-namespace --namespace codesealer-system \
->   --set codesealerToken="${CODESEALER_TOKEN}" \
->   --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
->   --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
->   --set worker.ingress.port="${INGRESS_PORT}" \
->   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
->   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set worker.replicaCount="${CODESEALER_WORKERS}" \
->   --set manager.enabled=true \
->   --wait --timeout=60s
-> ```
 
 ## Uninstalling
 

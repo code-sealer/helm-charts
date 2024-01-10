@@ -1,4 +1,4 @@
-{{- if not .Values.manager.enabled }}
+{{- if .Values.sidecar.enabled }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
 {{- if .Values.admission.secret.create }}
 ---
