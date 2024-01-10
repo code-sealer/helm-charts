@@ -40,7 +40,7 @@ following 2 Kubernetes Ingress Controller service types:
   2.  `NodePort`
       Use for local installations that do not support a LoadBalancer configuration.
       - Use this configuration if LoadBalancer option does not work
-      - Enabled by "--set ingress.nodePort.enabled=false" when installing the Codsealer helm chart.
+      - Enabled by "--set ingress.nodePort.enabled=false" when the Helm Chart.
 
 To use this Helm chart you will also need to set the following variables to match
 your Ingress Controller's deployment on your Kubernetes Cluster:
@@ -68,10 +68,10 @@ using the following command:
 helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
 helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
   --namespace ${INGRESS_NAMESPACE} --create-namespace \
-  --wait --timeout=90s
+  --wait --timeout=60s
 ```
 
-> NOTE: If using NodePort instead of LoadBalancer, install the Ingress using the following variation
+> NOTE: If using a NodePort instead of a LoadBalancer, install the Ingress using the following variation
 >       specifiying the desired port to use
 >
 > ```bash
