@@ -40,7 +40,7 @@ following 2 Kubernetes Ingress Controller service types:
   2.  `NodePort`
       Use for local installations that do not support a LoadBalancer configuration.
       - Use this configuration if LoadBalancer option does not work
-      - Enabled by setting CODESEALER_NODEPORT=true
+      - Enabled by "--set ingress.nodePort.enabled=false" when installing the Codsealer helm chart.
 
 To use this Helm chart you will also need to set the following variables to match
 your Ingress Controller's deployment on your Kubernetes Cluster:
@@ -196,12 +196,6 @@ Codesealer has the following default settings which affect the injection method,
   --set worker.config.endpoint.wafFullTransaction=true \
   --set worker.config.endpoint.crs.paranoiaLevel=1 \
 
-> NOTE: To enable Codesealer to work with a, Ingress Controller using a NodePort issue the following command:
->
-> ```bash
-> export CODESEALER_NODEPORT=true
-> ```
-
 > NOTE: If you would like to install Codesealer in `enterprise` mode (with a local Manager) issue the
 >       following commands:
 >
@@ -214,7 +208,6 @@ Codesealer has the following default settings which affect the injection method,
 >   --set worker.ingress.port="${INGRESS_PORT}" \
 >   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}"
 >   --set worker.replicaCount="${CODESEALER_WORKERS}" \
 >   --set manager.enabled=true \
 >   --wait --timeout=60s
@@ -251,7 +244,6 @@ helm upgrade codesealer ${CODESEALER_HELM_CHART} \
   --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
   --wait --timeout=60s
 ```
 
@@ -276,7 +268,6 @@ kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NA
 >   --set worker.ingress.port="${INGRESS_PORT}" \
 >   --set worker.redis.namespace="${REDIS_NAMESPACE}" \
 >   --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
->   --set ingress.nodePort.enabled="${CODESEALER_NODEPORT}" \
 >   --set worker.replicaCount="${CODESEALER_WORKERS}" \
 >   --set manager.enabled=true \
 >   --wait --timeout=60s
