@@ -4,7 +4,7 @@ metadata:
   name: config-toml
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if not .Values.manager.enabled }}
+  {{- if .Values.sidecar.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.ingress.namespace }}
@@ -40,85 +40,10 @@ data:
     influxToken = {{ .Values.influxDB.influxToken | quote }}
     influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
     modSecurityConf = {{ .Values.worker.config.bootloader.modSecurityConf | quote }}
-    {{- if .Values.manager.enabled }}
     fsEndpoints = false
-    {{ else }}
-    fsEndpoints = true
-    {{- end }}
     sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}
 
     [cache]
     folder = {{ .Values.worker.config.cache.folder | quote }}
     maxFileSize = {{ .Values.worker.config.cache.maxFileSize }}
     maxSize = {{ .Values.worker.config.cache.maxSize }}
-
-    {{- if not .Values.manager.enabled }}
-
-    [[endpoint]]
-    disable = {{ .Values.worker.config.endpoint.disable }}
-    {{- if .Values.ingress.nodePort.enabled }}
-    remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.nodePort }}"
-    {{ else }}
-    remoteIn = "{{ .Values.worker.config.endpoint.inScheme }}://{{ .Values.worker.config.endpoint.inHostname }}:{{ .Values.worker.ingress.port }}"
-    {{- end }}
-    remoteOut = "{{ .Values.worker.config.endpoint.outScheme }}://{{ .Values.worker.config.endpoint.outHostname }}:{{ .Values.worker.ingress.port }}"
-    scriptOptIn = {{ .Values.worker.config.endpoint.scriptOptIn }}
-    scriptOptOut = {{ .Values.worker.config.endpoint.scriptOptOut }}
-    ignoreRemoteTLS = {{ .Values.worker.config.endpoint.ignoreRemoteTLS }}
-    letsEncrypt = {{ .Values.worker.config.endpoint.letsEncrypt }}
-    tlsCertPath = {{ .Values.worker.config.endpoint.tlsCertPath | quote }}
-    tlsKeyPath = {{ .Values.worker.config.endpoint.tlsKeyPath | quote }}
-    autoXhr = {{ .Values.worker.config.endpoint.autoXhr }}
-    exposeXhrWindow = {{ .Values.worker.config.endpoint.exposeXhrWindow }}
-    protectDynamicContent = {{ .Values.worker.config.endpoint.protectDynamicContent }}
-    enableWebSocket = {{ .Values.worker.config.endpoint.enableWebSocket }}
-    exposeWebSocketWindow = {{ .Values.worker.config.endpoint.exposeWebSocketWindow }}
-    allowedDomains = {{ .Values.worker.config.endpoint.allowedDomains }}
-    sessionLifetime = {{ .Values.worker.config.endpoint.sessionLifetime }}
-    enableWaf = {{ .Values.worker.config.endpoint.enableWaf }}
-    wafFullTransaction = {{ .Values.worker.config.endpoint.wafFullTransaction }}
-    wafMonitorMode = {{ .Values.worker.config.endpoint.wafMonitorMode }}
-    SNIOverwrite = {{ .Values.worker.config.endpoint.SNIOverwrite | quote }}
-    HostnameOverwrite = {{ .Values.worker.config.endpoint.HostnameOverwrite | quote }}
-    invalidHTMLCompat = {{ .Values.worker.config.endpoint.invalidHTMLCompat }}
-    bodyOnloadCompat = {{ .Values.worker.config.endpoint.bodyOnloadCompat }}
-    strictSession = {{ .Values.worker.config.endpoint.strictSession }}
-    appThrottling = {{ .Values.worker.config.endpoint.appThrottling }}
-    appThrottlingRate = {{ .Values.worker.config.endpoint.appThrottlingRate }}
-    appThrottlingBurst = {{ .Values.worker.config.endpoint.appThrottlingBurst }}
-    appThrottlingIterations = {{ .Values.worker.config.endpoint.appThrottlingIterations }}
-    omitProxyHeaders = {{ .Values.worker.config.endpoint.omitProxyHeaders }}
-    stripContentSecurity = {{ .Values.worker.config.endpoint.stripContentSecurity }}
-    injectDOMContentLoaded = {{ .Values.worker.config.endpoint.injectDOMContentLoaded }}
-    redirectCompat = {{ .Values.worker.config.endpoint.redirectCompat }}
-    disableCSCookies = {{ .Values.worker.config.endpoint.disableCSCookies }}
-    killSwitch = {{ .Values.worker.config.endpoint.killSwitch }}
-    scriptRetainAttributes = {{ .Values.worker.config.endpoint.scriptRetainAttributes }}
-    ipBypassList = {{ .Values.worker.config.endpoint.ipBypassList }}
-    invertIPBypassList = {{ .Values.worker.config.endpoint.invertIPBypassList }}
-    ipAccessList = {{ .Values.worker.config.endpoint.ipAccessList }}
-    exposeJSVars = {{ .Values.worker.config.endpoint.exposeJSVars }}
-    scriptPreamble = {{ .Values.worker.config.endpoint.scriptPreamble | quote }}
-    scriptPostamble = {{ .Values.worker.config.endpoint.scriptPostamble | quote }}
-    minifyBundles = {{ .Values.worker.config.endpoint.minifyBundles }}
-    cacheEnabled = {{ .Values.worker.config.endpoint.cacheEnabled }}
-
-    [[endpoint.proxyPathFilter]]
-    block = {{ .Values.worker.config.endpoint.proxyPathFilter.block }}
-    path = {{ .Values.worker.config.endpoint.proxyPathFilter.path | quote }}
-
-    [[endpoint.protectionPathFilter]]
-    bypass = {{ .Values.worker.config.endpoint.protectionPathFilter.bypass }}
-    path = {{ .Values.worker.config.endpoint.protectionPathFilter.path | quote }}
-
-    [[endpoint.scriptReplace]]
-    to = {{ .Values.worker.config.endpoint.scriptReplace.to | quote }}
-    from = {{ .Values.worker.config.endpoint.scriptReplace.from | quote }}
-
-    [[endpoint.cacheRule]]
-    contentType = {{ .Values.worker.config.endpoint.cacheRule.contentType | quote }}
-    path = {{ .Values.worker.config.endpoint.cacheRule.path | quote }}
-    overrideMaxAge = {{ .Values.worker.config.endpoint.cacheRule.overrideMaxAge }}
-    ignoreNoStore = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoStore }}
-    ignoreNoCache = {{ .Values.worker.config.endpoint.cacheRule.ignoreNoCache }}
-    {{- end }}

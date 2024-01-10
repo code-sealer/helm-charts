@@ -4,7 +4,7 @@ metadata:
   name: crs-setup-conf
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  {{- if not .Values.manager.enabled }}
+  {{- if .Values.sidecar.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.ingress.namespace }}
@@ -192,7 +192,7 @@ data:
       nolog,\
       pass,\
       t:none,\
-      setvar:tx.paranoia_level={{ .Values.worker.config.endpoint.crs.paranoiaLevel }}"
+      setvar:tx.paranoia_level={{ .Values.worker.config.modsecurity.crs.paranoiaLevel }}"
 
 
     # It is possible to execute rules from a higher paranoia level but not include
@@ -218,7 +218,7 @@ data:
       nolog,\
       pass,\
       t:none,\
-      setvar:tx.executing_paranoia_level={{ .Values.worker.config.endpoint.crs.executing_paranoia_level }}"
+      setvar:tx.executing_paranoia_level={{ .Values.worker.config.modsecurity.crs.executing_paranoia_level }}"
 
 
     #
@@ -242,7 +242,7 @@ data:
       nolog,\
       pass,\
       t:none,\
-      setvar:tx.enforce_bodyproc_urlencoded={{ .Values.worker.config.endpoint.crs.enforce_bodyproc_urlencoded }}"
+      setvar:tx.enforce_bodyproc_urlencoded={{ .Values.worker.config.modsecurity.crs.enforce_bodyproc_urlencoded }}"
 
 
     #
@@ -275,10 +275,10 @@ data:
      nolog,\
      pass,\
      t:none,\
-     setvar:tx.critical_anomaly_score={{ .Values.worker.config.endpoint.crs.critical_anomaly_score }},\
-     setvar:tx.error_anomaly_score={{ .Values.worker.config.endpoint.crs.error_anomaly_score }},\
-     setvar:tx.warning_anomaly_score={{ .Values.worker.config.endpoint.crs.warning_anomaly_score }},\
-     setvar:tx.notice_anomaly_score={{ .Values.worker.config.endpoint.crs.notice_anomaly_score }}"
+     setvar:tx.critical_anomaly_score={{ .Values.worker.config.modsecurity.crs.critical_anomaly_score }},\
+     setvar:tx.error_anomaly_score={{ .Values.worker.config.modsecurity.crs.error_anomaly_score }},\
+     setvar:tx.warning_anomaly_score={{ .Values.worker.config.modsecurity.crs.warning_anomaly_score }},\
+     setvar:tx.notice_anomaly_score={{ .Values.worker.config.modsecurity.crs.notice_anomaly_score }}"
 
 
     #
@@ -327,8 +327,8 @@ data:
      nolog,\
      pass,\
      t:none,\
-     setvar:tx.inbound_anomaly_score_threshold={{ .Values.worker.config.endpoint.crs.inbound_anomaly_score_threshold }},\
-     setvar:tx.outbound_anomaly_score_threshold={{ .Values.worker.config.endpoint.crs.outbound_anomaly_score_threshold }}"
+     setvar:tx.inbound_anomaly_score_threshold={{ .Values.worker.config.modsecurity.crs.inbound_anomaly_score_threshold }},\
+     setvar:tx.outbound_anomaly_score_threshold={{ .Values.worker.config.modsecurity.crs.outbound_anomaly_score_threshold }}"
 
     #
     # -- [[ Application Specific Rule Exclusions ]] ----------------------------------------
@@ -819,7 +819,7 @@ data:
 
     # Please keep this directive uncommented.
     # Default: 600 (10 minutes)
-    SecCollectionTimeout {{ .Values.worker.config.endpoint.crs.SecCollectionTimeout}}
+    SecCollectionTimeout {{ .Values.worker.config.modsecurity.crs.SecCollectionTimeout}}
 
 
     #

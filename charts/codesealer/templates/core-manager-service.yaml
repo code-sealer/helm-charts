@@ -1,4 +1,3 @@
-{{- if .Values.manager.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,4 +12,3 @@ spec:
       targetPort: {{ .Values.manager.config.listen }}
   selector:
     {{- include "codesealer.selectorLabels" . | nindent 6 }}
-{{- end }}

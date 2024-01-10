@@ -1,4 +1,20 @@
-{{- if .Values.manager.enabled }}
+{{- if .Values.sidecar.enabled }}
+To enable Codesealer on Ingress Controller:
+
+  $ kubectl label ns {{ .Values.worker.ingress.namespace }} codesealer.com/webhook=enabled
+  
+  $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} \
+    -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":{{ .Values.worker.ingress.port }}}}}} }'
+
+{{- if .Values.ingress.nodePort.enabled }}
+The application can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
+{{ else }}
+The application can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
+{{- end }}
+{{- end }}
+
+---------------
+
 The first time core-manager is started, it will create a Maintenance Administrator. 
 To see the credentials for this account, find the admin credential in the core-manager log: 
 
@@ -13,25 +29,3 @@ The manager can be accessed at https://localhost:8444
 
   1. Log in with admin account and the manager password from the log
   2. Go to Documentation to setup your first endpoint 
-
-{{- if .Values.ingress.nodePort.enabled }}
-The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
-{{ else }}
-The endpoint configured can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
-{{- end }}
-
-{{ else }}
-To enable Codesealer on Ingress Controller:
-
-  $ kubectl label ns {{ .Values.worker.ingress.namespace }} codesealer.com/webhook=enabled
-  
-  $ kubectl patch deployment {{ .Values.worker.ingress.deployment }} -n {{ .Values.worker.ingress.namespace }} \
-    -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":{{ .Values.worker.ingress.port }}}}}} }'
-
-{{- if .Values.ingress.nodePort.enabled }}
-The application can be accessed at https://localhost:{{ .Values.worker.ingress.nodePort }}
-{{ else }}
-The application can be accessed at https://localhost:{{ .Values.worker.ingress.port }}
-{{- end }}
-
-{{- end }}  

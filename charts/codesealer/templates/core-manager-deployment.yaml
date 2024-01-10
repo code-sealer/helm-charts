@@ -1,4 +1,3 @@
-{{- if .Values.manager.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -59,4 +58,3 @@ spec:
         - name: {{ .Values.ingress.secret.name }}
           secret:
             secretName: {{ .Values.ingress.secret.name }}
-{{- end }}
