@@ -41,6 +41,11 @@ spec:
             - mountPath: /etc/codesealer-core/config.toml
               subPath: config.toml
               name: config-toml
+            {{ if .Values.manager.init }}
+            - mountPath: /etc/codesealer-core/organizations-init.json
+              subPath: organizations-init.json
+              name: organizations-init-volume
+            {{ end }}
             - name: core-manager-data
               mountPath: /var/lib/core-manager
               readOnly: false
@@ -52,6 +57,11 @@ spec:
         - name: config-toml
           configMap:
             name: config-manager-toml
+        {{ if .Values.manager.init }}
+        - name: organizations-init-volume
+          configMap:
+            name: organizations-init
+        {{ end }}
         - name: core-manager-data
           persistentVolumeClaim:
             claimName: core-manager-pv-claim

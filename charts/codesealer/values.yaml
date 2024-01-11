@@ -608,6 +608,7 @@ manager:
   restartPolicy: Always
   image: release/core-manager
   tag: latest
+  init: ""
 
   service:
     type: ClusterIP
