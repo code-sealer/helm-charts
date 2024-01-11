@@ -171,8 +171,14 @@ admission:
 worker:
   name: codesealer-core
   replicaCount: 1
-  image: release/codesealer-core-modsec
+  image: release/codesealer-core-hybrid-modsec
   tag: latest
+
+  # URL to control plane for hybrid mode
+  controlURL: ""
+
+  # Cluster key for hybrid mode
+  clusterKey: ""
 
   # Ingress Controller intercept parameters
   ingress:
