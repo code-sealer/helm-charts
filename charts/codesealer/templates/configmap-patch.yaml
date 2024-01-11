@@ -35,6 +35,9 @@ data:
         - name: {{ .Values.worker.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ if .Values.worker.controlURL }}
+          args: ["--control", "{{ .Values.worker.controlURL}}", "--clusterKey", "{{ .Values.worker.clusterKey}}"]
+          {{ end }}
           ports:
             - containerPort: {{ .Values.worker.config.network.listen }}
               protocol: TCP
