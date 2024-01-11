@@ -1,0 +1,11 @@
+{{ if .Values.manager.init }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: organizations-init
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}
+  namespace: {{ .Values.ingress.namespace }}
+data:
+  organizations-init.json: {{ .Values.manager.init | toJson }}
+{{ end }}
