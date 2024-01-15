@@ -12,8 +12,6 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 
-clusterDomain: cluster.local
-
 probes:
   initialDelaySeconds: 30
   timeoutSeconds: 5
@@ -657,10 +655,6 @@ manager:
   podAnnotations: {}
 
   podLabels: {}
-
-  env:
-    DEBUG_LEVEL: "DEBUG"
-    LOG_LEVEL: "INFO"
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
