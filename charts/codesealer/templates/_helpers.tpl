@@ -69,15 +69,7 @@ Additions
 Create the json for the docker registry credentials
 */}}
 {{- define "codesealer.imagePullSecret" -}}
-{{- if .Values.imageCredentials }}
-{{- if .Values.imageCredentials.password }}
-{{- printf "{\"auths\":{\"ghcr.io/code-sealer\":{\"username\":\"code-sealer\",\"password\":\"%s\",\"auth\":\"%s\"}}}" (required ".imageCredentials.password must be passed" .Values.imageCredentials.password) (printf "%s:%s" "code-sealer" .Values.imageCredentials.password | b64enc) | b64enc }}
-{{- else }}
 {{- printf "{\"auths\":{\"ghcr.io/code-sealer\":{\"username\":\"%s\",\"password\":\"%s\",\"auth\":\"%s\"}}}" "code-sealer" (required ".codesealerToken must be passed" .Values.codesealerToken) (printf "%s:%s" "code-sealer" .Values.codesealerToken | b64enc) | b64enc }}
-{{- end }}
-{{- else }}
-{{- printf "{\"auths\":{\"ghcr.io/code-sealer\":{\"username\":\"%s\",\"password\":\"%s\",\"auth\":\"%s\"}}}" "code-sealer" (required ".codesealerToken must be passed" .Values.codesealerToken) (printf "%s:%s" "code-sealer" .Values.codesealerToken | b64enc) | b64enc }}
-{{- end }}
 {{- end }}
 
 {{/*
