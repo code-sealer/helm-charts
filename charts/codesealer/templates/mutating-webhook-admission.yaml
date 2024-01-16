@@ -1,15 +1,15 @@
 {{- if .Values.sidecar.enabled }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
-{{- if .Values.webhook.secret.create }}
+{{- if .Values.webhook.cert.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  name: {{ .Values.webhook.secret.name }}
+  name: {{ .Values.webhook.cert.name }}
   namespace: {{ .Values.webhook.namespace }}
-type: {{ .Values.webhook.secret.type }}
+type: {{ .Values.webhook.cert.type }}
 data:
   # Cert for {{ include "webhook.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}

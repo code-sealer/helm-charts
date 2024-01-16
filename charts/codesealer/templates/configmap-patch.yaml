@@ -45,7 +45,7 @@ data:
             - name: config-toml
               mountPath: /etc/codesealer-core/config.toml
               subPath: config.toml
-            - name: {{ .Values.worker.secret.name }}
+            - name: {{ .Values.worker.cert.name }}
               mountPath: /etc/codesealer-core/certs
               readOnly: true
             - name: modsec-conf
@@ -61,9 +61,9 @@ data:
         - name: config-toml
           configMap:
             name: config-toml
-        - name: {{ .Values.worker.secret.name }}
+        - name: {{ .Values.worker.cert.name }}
           secret:
-            secretName: {{ .Values.worker.secret.name }}
+            secretName: {{ .Values.worker.cert.name }}
         - name: modsec-conf
           configMap:
             name: modsec-conf
