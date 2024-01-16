@@ -36,7 +36,6 @@ spec:
             - name: {{ $key }}
               value: {{ tpl $value $ | quote }}
           {{- end }}
-          resources: {}
           volumeMounts:
             - mountPath: /etc/codesealer-core/config.toml
               subPath: config.toml

@@ -55,9 +55,6 @@ webhook:
   # default to Never
   reinvocationPolicy: "Never"
 
-  # Annotations to add to service. (Optional)
-  annotations: {}
-
   # admission CA can be used to override the Certs that will be used
   # to sign the keys used by the admission operator.
   ca:
@@ -84,72 +81,11 @@ webhook:
     # PEM format certificate (auto-generated)
     # override via --set-file
     key: ""
-    # override via --set-file
-    # Annotations to add to admission secret. (Optional)
-    annotations: {}
-
-  annotations: {}
 
   env:
-    HTTPS_PORT: "8443"
-    HTTPS_ENABLED: "true"
     SSL_CRT_FILE_NAME: "/certs/tls.crt"
     SSL_KEY_FILE_NAME: "/certs/tls.key"
     PATCH_FILE_NAME: "/patch/patch.yaml"
-    CODESEALER_DEBUG: "TRUE"
-
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # autoscaling:
-  #   enabled: false
-  #   minReplicas: 1
-  #   maxReplicas: 100
-  #   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-  # Additional volumes on the output Deployment definition.
-  # volumes:
-  #   - name: codesealer-mutating-webhook-cert
-  #     secret:
-  #       secretName: codesealer-mutating-webhook-cert
-  #   - name: codesealer-mutating-webhook-patch
-  #     configMap:
-  #       name: codesealer-mutating-webhook-patch
-
-  # Additional volumeMounts on the output Deployment definition.
-  # volumeMounts:
-  #   - name: codesealer-mutating-webhook-cert
-  #     mountPath: /certs
-  #     readOnly: true
-  #   - name: codesealer-mutating-webhook-patch
-  #     mountPath: /patch
-
-  podSecurityContext: {}
-    # fsGroup: 2000
-
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
-
-  # nodeSelector: {}
-
-  # tolerations: []
-
-  # affinity: {}
 
 sidecar:
   # If true deploy as a side car
@@ -212,8 +148,6 @@ worker:
     # PEM format certificate (auto-generated)
     # override via --set-file
     key: ""
-    # override via --set-file
-    annotations: {}
 
   config:
     ################################################
@@ -530,61 +464,6 @@ worker:
           enabled: false
           tags: []
 
-  annotations: {}
-
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # autoscaling:
-  #   enabled: false
-  #   minReplicas: 1
-  #   maxReplicas: 100
-  #   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-  # Additional volumes on the output Deployment definition.
-  # volumes:
-  #   - name: codesealer-mutating-webhook-cert
-  #     secret:
-  #       secretName: codesealer-mutating-webhook-cert
-  #   - name: codesealer-mutating-webhook-patch
-  #     configMap:
-  #       name: codesealer-mutating-webhook-patch
-
-  # Additional volumeMounts on the output Deployment definition.
-  # volumeMounts:
-  #   - name: codesealer-mutating-webhook-cert
-  #     mountPath: /certs
-  #     readOnly: true
-  #   - name: codesealer-mutating-webhook-patch
-  #     mountPath: /patch
-
-  podSecurityContext: {}
-    # fsGroup: 2000
-
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -661,80 +540,6 @@ manager:
     backend:
     # The name of the backend.
       backendID: "default"
-
-  annotations: {}
-
-  labels:
-    app: core-manager
-    codesealer.service: core-manager
-
-  selectorLabels:
-    app: core-manager
-    service: core-manager
-
-  podAnnotations: {}
-
-  podLabels: {}
-
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # autoscaling:
-  #   enabled: false
-  #   minReplicas: 1
-  #   maxReplicas: 100
-  #   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-  # Additional volumes on the output Deployment definition.
-  # volumes:
-  #   - name: config-toml
-  #     configMap:
-  #       name: config-toml
-  #   - name: core-manager-data
-  #     persistentVolumeClaim:
-  #       claimName: core-manager-pv-claim
-  #   - name: codesealer-worker-tls
-  #     secret:
-  #       secretName: codesealer-worker-tls
-
-  # Additional volumeMounts on the output Deployment definition.
-  # volumeMounts:
-  #   - mountPath: /etc/codesealer-core/config.toml
-  #     subPath: config.toml
-  #     name: config-toml
-  #   - name: core-manager-data
-  #     mountPath: /var/lib/core-manager
-  #     readOnly: false
-  #   - mountPath: /etc/core-manager
-  #     name: codesealer-worker-tls
-  #     readOnly: true
-
-  podSecurityContext: {}
-    # fsGroup: 2000
-
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}
 
 # Ingress Parameters for Core-Manager
 ingress:

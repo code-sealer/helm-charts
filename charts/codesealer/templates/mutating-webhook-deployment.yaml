@@ -35,8 +35,6 @@ spec:
             - name: {{ $key }}
               value: {{ tpl $value $ | quote }}
           {{- end }}
-          resources:
-            {{- toYaml .Values.webhook.resources | nindent 12 }}
           livenessProbe:
             failureThreshold: {{ .Values.probes.failureThreshold }}
             httpGet:
