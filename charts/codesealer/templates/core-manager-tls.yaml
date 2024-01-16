@@ -1,0 +1,18 @@
+{{ $tls := fromYaml ( include "manager.gen-certs" . ) }}
+{{- if .Values.manager.secret.create }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+   {{- include "codesealer.labels" . | nindent 4 }}  
+  name: {{ .Values.manager.secret.name }}
+  namespace: {{ .Values.namespace }}
+type: {{ .Values.manager.secret.type }}
+data:
+  # Cert for {{ include "manager.service.fullname" . }}
+  tls.crt: {{ $tls.clientCert }}
+  tls.key: {{ $tls.clientKey }}
+  ca.crt: {{ $tls.caCert }}
+{{- end }}
+---
