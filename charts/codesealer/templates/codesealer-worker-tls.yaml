@@ -8,7 +8,7 @@ metadata:
    {{- include "codesealer.labels" . | nindent 4 }}  
   name: {{ .Values.worker.secret.name }}
   {{- if .Values.sidecar.enabled }}
-  namespace: {{ .Values.worker.ingress.namespace }}
+  namespace: {{ .Values.sidecar.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.namespace }}
   {{- end }}

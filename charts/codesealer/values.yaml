@@ -107,6 +107,14 @@ sidecar:
   # If true deploy as a side car
   enabled: false
 
+  # Ingress Controller intercept parameters
+  ingress:
+    # Namespace where the Ingress Controller resides
+    namespace: ingress-nginx
+    deployment: ingress-nginx-controller
+    port: 443
+    nodePort: 31443
+
 admission:
   # The name of the admission to use.
   # If not set, a name is generated using the fullname template
@@ -175,14 +183,6 @@ worker:
 
   # Cluster key for hybrid mode
   clusterKey: ""
-
-  # Ingress Controller intercept parameters
-  ingress:
-    # Namespace where the Ingress Controller resides
-    namespace: ingress-nginx
-    deployment: ingress-nginx-controller
-    port: 443
-    nodePort: 31443
 
   redis:
     namespace: redis

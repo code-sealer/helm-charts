@@ -29,7 +29,7 @@ data:
             - /bin/sh
           args:
             - -c
-            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.worker.ingress.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
+            - iptables -t nat -A PREROUTING -p tcp -i eth0 --dport {{ .Values.sidecar.ingress.port }} -j REDIRECT --to-port {{ .Values.worker.config.network.listen }} && iptables -t nat --list && echo IPtables Pre-Route Completed Succesfully!
       {{- end }}
       containers:
         - name: {{ .Values.worker.name }}
