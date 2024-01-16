@@ -18,12 +18,12 @@ The application can be accessed at https://localhost:{{ .Values.worker.ingress.p
 The first time core-manager is started, it will create a Maintenance Administrator. 
 To see the credentials for this account, find the admin credential in the core-manager log: 
 
-  $ POD=$(kubectl get pods -n {{ .Values.ingress.namespace }} | grep core-manager | cut -d " " -f1 )
-  $ kubectl logs ${POD} -n {{ .Values.ingress.namespace }} | grep password
+  $ POD=$(kubectl get pods -n {{ .Values.namespace }} | grep core-manager | cut -d " " -f1 )
+  $ kubectl logs ${POD} -n {{ .Values.namespace }} | grep password
 
 To access the Codesealer Manager:
 
-  $ kubectl port-forward service/core-manager -n {{ .Values.ingress.namespace }} 8444:8444 &
+  $ kubectl port-forward service/core-manager -n {{ .Values.namespace }} 8444:8444 &
 
 The manager can be accessed at https://localhost:8444
 

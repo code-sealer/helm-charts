@@ -4,7 +4,7 @@ metadata:
   name: config-manager-toml
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
 data:
   config.toml: |     
     [manager]

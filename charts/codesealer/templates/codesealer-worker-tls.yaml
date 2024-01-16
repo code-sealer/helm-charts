@@ -10,7 +10,7 @@ metadata:
   {{- if .Values.sidecar.enabled }}
   namespace: {{ .Values.worker.ingress.namespace }}
   {{ else }}
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
   {{- end }}
 type: {{ .Values.worker.secret.type }}
 data:

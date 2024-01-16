@@ -4,7 +4,7 @@ metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
   name: {{ .Values.manager.name }}
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:

@@ -5,7 +5,7 @@ metadata:
   name: organizations-init
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
 data:
   organizations-init.json: {{ .Values.manager.init | toJson }}
 {{ end }}
