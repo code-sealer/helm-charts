@@ -8,7 +8,7 @@ metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}  
   name: {{ .Values.ingress.secret.name }}
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
 type: {{ .Values.ingress.secret.type }}
 data:
   # Cert for {{ include "ingress.service.fullname" . }}

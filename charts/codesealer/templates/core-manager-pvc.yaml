@@ -4,7 +4,7 @@ metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}
   name: core-manager-pv-claim
-  namespace: {{ .Values.ingress.namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
   accessModes:
     - ReadWriteOnce
