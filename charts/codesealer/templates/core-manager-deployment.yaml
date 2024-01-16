@@ -49,7 +49,7 @@ spec:
               mountPath: /var/lib/core-manager
               readOnly: false
             - mountPath: /etc/core-manager
-              name: {{ .Values.manager.secret.name }}
+              name: {{ .Values.manager.cert.name }}
               readOnly: true
       restartPolicy: {{ .Values.manager.restartPolicy }}
       volumes:
@@ -64,6 +64,6 @@ spec:
         - name: core-manager-data
           persistentVolumeClaim:
             claimName: core-manager-pv-claim
-        - name: {{ .Values.manager.secret.name }}
+        - name: {{ .Values.manager.cert.name }}
           secret:
-            secretName: {{ .Values.manager.secret.name }}
+            secretName: {{ .Values.manager.cert.name }}

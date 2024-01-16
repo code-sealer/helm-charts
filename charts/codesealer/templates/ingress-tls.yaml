@@ -1,15 +1,15 @@
 {{- if .Values.sidecar.enabled -}}
 {{ $tls := fromYaml ( include "ingress.gen-certs" . ) }}
-{{- if .Values.ingress.secret.create }}
+{{- if .Values.ingress.cert.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}  
-  name: {{ .Values.ingress.secret.name }}
+  name: {{ .Values.ingress.cert.name }}
   namespace: {{ .Values.namespace }}
-type: {{ .Values.ingress.secret.type }}
+type: {{ .Values.ingress.cert.type }}
 data:
   # Cert for {{ include "ingress.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}

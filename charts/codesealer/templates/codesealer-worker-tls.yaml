@@ -1,18 +1,18 @@
 {{ $tls := fromYaml ( include "worker.gen-certs" . ) }}
-{{- if .Values.worker.secret.create }}
+{{- if .Values.worker.cert.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "codesealer.labels" . | nindent 4 }}  
-  name: {{ .Values.worker.secret.name }}
+  name: {{ .Values.worker.cert.name }}
   {{- if .Values.sidecar.enabled }}
   namespace: {{ .Values.sidecar.ingress.namespace }}
   {{ else }}
   namespace: {{ .Values.namespace }}
   {{- end }}
-type: {{ .Values.worker.secret.type }}
+type: {{ .Values.worker.cert.type }}
 data:
   # Cert for {{ include "worker.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}

@@ -62,14 +62,14 @@ webhook:
     # provide cert and key via --set-file
     create: true
     # # A base64 encoded PEM format certificate
-    # cert: ""
+    cert: ""
     # # A base64 encoded PEM format private key
-    # key: ""
+    key: ""
     # Expiry time of CA in days for generated certs
     expiration: 365
 
   # admission secret with client certs mounted within the admission controller.
-  secret:
+  cert:
     create: true
     # name of the secret (auto-generated)
     name: "codesealer-mutating-webhook-cert"
@@ -130,14 +130,14 @@ worker:
     # provide cert and key via --set-file
     create: true
     # # A base64 encoded PEM format certificate
-    # cert: ""
+    cert: ""
     # # A base64 encoded PEM format private key
-    # key: ""
+    key: ""
     # Expiry time of CA in days for generated certs
     expiration: 365
 
   # admission secret with client certs mounted within the admission controller.
-  secret:
+  cert:
     create: true
     # name of the secret (auto-generated)
     name: codesealer-worker-tls
@@ -494,14 +494,14 @@ manager:
     # provide cert and key via --set-file
     create: true
     # # A base64 encoded PEM format certificate
-    # cert: ""
+    cert: ""
     # # A base64 encoded PEM format private key
-    # key: ""
+    key: ""
     # Expiry time of CA in days for generated certs
     expiration: 365
 
   # admission secret with client certs mounted within the admission controller.
-  secret:
+  cert:
     create: true
     # name of the secret (auto-generated)
     name: codesealer-manager-tls
@@ -574,14 +574,14 @@ ingress:
     # provide cert and key via --set-file
     create: true
     # # A base64 encoded PEM format certificate
-    # cert: ""
+    cert: ""
     # # A base64 encoded PEM format private key
-    # key: ""
+    key: ""
     # Expiry time of CA in days for generated certs
     expiration: 365
 
   # admission secret with client certs mounted within the admission controller.
-  secret:
+  cert:
     create: true
     # name of the secret (auto-generated)
     name: ingress-tls
