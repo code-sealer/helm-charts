@@ -4,7 +4,7 @@ kind: Service
 metadata:
   labels:
    {{- include "worker.labels" . | nindent 4 }}
-  name: {{ .Values.worker.name }}
+  name: {{ include "worker.serviceName" . }}
   namespace: {{ .Values.namespace }}
 spec:
   ports:

@@ -1,4 +1,8 @@
 {{/*
+###################### Chart helpers ######################
+*/}}
+
+{{/*
 Expand the name of the chart.
 */}}
 {{- define "codesealer.name" -}}
@@ -35,19 +39,12 @@ Common labels
 */}}
 {{- define "codesealer.labels" -}}
 helm.sh/chart: {{ include "codesealer.chart" . }}
-{{ include "codesealer.selectorLabels" . }}
+app.kubernetes.io/name: {{ include "codesealer.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "codesealer.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "codesealer.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
@@ -62,15 +59,138 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Additions
+###################### Worker helpers ######################
 */}}
 
 {{/*
-Create the json for the docker registry credentials
+Name of the Worker.
 */}}
-{{- define "codesealer.imagePullSecret" -}}
-{{- printf "{\"auths\":{\"ghcr.io/code-sealer\":{\"username\":\"%s\",\"password\":\"%s\",\"auth\":\"%s\"}}}" "code-sealer" (required ".codesealerToken must be passed" .Values.codesealerToken) (printf "%s:%s" "code-sealer" .Values.codesealerToken | b64enc) | b64enc }}
+{{- define "worker.name" -}}
+{{- default .Values.worker.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+Worker labels
+*/}}
+{{- define "worker.labels" -}}
+{{ include "codesealer.labels" . }}
+{{ include "worker.selectorLabels" . }}
+{{- end }}
+
+{{/*
+Worker Selector labels
+*/}}
+{{- define "worker.selectorLabels" -}}
+codesealer-app: {{ include "worker.name" . }}
+{{- end }}
+
+{{/*
+Create the name of the Worker service to use
+*/}}
+{{- define "worker.serviceName" -}}
+{{- .Values.worker.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create service fully qualified hostname for the Worker service
+*/}}
+{{- define "worker.service.fullname" -}}
+{{- default ( printf "%s.%s.svc.cluster.local" (include "worker.serviceName" .) .Values.namespace ) }}
+{{- end }}
+
+{{/*
+Generate Worker certificate authority
+*/}}
+{{- define "worker.gen-certs" -}}
+{{- $expiration := (.Values.worker.ca.expiration | int) -}}
+{{- if (or (empty .Values.worker.ca.cert) (empty .Values.worker.ca.key)) -}}
+{{- $ca :=  genCA "worker-ca" $expiration -}}
+{{- template "worker.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate Worker client key and cert from CA
+*/}}
+{{- define "worker.gen-client-tls" -}}
+{{- $altNames := list ( include "worker.service.fullname" .RootScope) (printf "*.%s" ( include "worker.service.fullname" .RootScope)) "127.0.0.1" "localhost" -}}
+{{- $expiration := (.RootScope.Values.worker.ca.expiration | int) -}}
+{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
+{{- $clientCert := $cert.Cert | b64enc -}}
+{{- $clientKey := $cert.Key | b64enc -}}
+caCert: {{ .CA.Cert | b64enc }}
+clientCert: {{ $clientCert }}
+clientKey: {{ $clientKey }}
+{{- end -}}
+
+{{/*
+###################### Manager helpers ######################
+*/}}
+
+{{/*
+Name of the Manager.
+*/}}
+{{- define "manager.name" -}}
+{{- default .Values.manager.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+manager labels
+*/}}
+{{- define "manager.labels" -}}
+{{ include "codesealer.labels" . }}
+{{ include "manager.selectorLabels" . }}
+{{- end }}
+
+{{/*
+manager Selector labels
+*/}}
+{{- define "manager.selectorLabels" -}}
+codesealer-app: {{ include "manager.name" . }}
+{{- end }}
+
+{{/*
+Create the name of the Manager service to use
+*/}}
+{{- define "manager.serviceName" -}}
+{{- .Values.manager.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create service fully qualified hostname for the Manager service
+*/}}
+{{- define "manager.service.fullname" -}}
+{{- default ( printf "%s.%s.svc.cluster.local" (include "manager.serviceName" .) .Values.namespace ) }}
+{{- end }}
+
+{{/*
+Generate Manager certificate authority
+*/}}
+{{- define "manager.gen-certs" -}}
+{{- $expiration := (.Values.manager.ca.expiration | int) -}}
+{{- if (or (empty .Values.manager.ca.cert) (empty .Values.manager.ca.key)) -}}
+{{- $ca :=  genCA "manager-ca" $expiration -}}
+{{- template "manager.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate Manager client key and cert from CA
+*/}}
+{{- define "manager.gen-client-tls" -}}
+{{- $altNames := list ( include "manager.service.fullname" .RootScope) (printf "*.%s" ( include "manager.service.fullname" .RootScope)) "127.0.0.1" "localhost" -}}
+{{- $expiration := (.RootScope.Values.manager.ca.expiration | int) -}}
+{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
+{{- $clientCert := $cert.Cert | b64enc -}}
+{{- $clientKey := $cert.Key | b64enc -}}
+caCert: {{ .CA.Cert | b64enc }}
+clientCert: {{ $clientCert }}
+clientKey: {{ $clientKey }}
+{{- end -}}
+
+{{/*
+###################### Webhook helpers ######################
+*/}}
 
 {{/*
 Name of the webhook.
@@ -83,45 +203,22 @@ Name of the webhook.
 Webhook labels
 */}}
 {{- define "webhook.labels" -}}
-helm.sh/chart: {{ include "codesealer.chart" . }}
+{{ include "codesealer.labels" . }}
 {{ include "webhook.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
 Webhook Selector labels
 */}}
 {{- define "webhook.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "webhook.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Create the name for secret to use.
-*/}}
-{{- define "webhook.secretName" -}}
-{{- if .Values.admission.secret.create }}
-  {{- default (include "webhook.name" .) .Values.admission.secret.name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-  {{- default "default" .Values.admission.secret.name }}
-{{- end }}
+codesealer-app: {{ include "webhook.name" . }}
 {{- end }}
 
 {{/*
 Create the name of the service to use
 */}}
 {{- define "webhook.serviceName" -}}
-{{- default (include "webhook.name" .) .Values.webhook.name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create the name of the admission controller to use
-*/}}
-{{- define "webhook.admissionName" -}}
-{{- default (include "webhook.name" .) .Values.admission.name | trunc 63 | trimSuffix "-" }}
+{{- .Values.webhook.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -157,70 +254,8 @@ clientKey: {{ $clientKey }}
 {{- end -}}
 
 {{/*
-Name of the worker.
+###################### Ingress helpers ######################
 */}}
-{{- define "worker.name" -}}
-{{- default .Values.worker.name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Worker labels
-*/}}
-{{- define "worker.labels" -}}
-helm.sh/chart: {{ include "codesealer.chart" . }}
-{{ include "worker.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Worker Selector labels
-*/}}
-{{- define "worker.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "worker.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Create the name of the Redis service to use
-*/}}
-{{- define "worker.serviceName" -}}
-{{- .Values.worker.redis.service.name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create service fully qualified hostname for the Redis service
-*/}}
-{{- define "worker.service.fullname" -}}
-{{- default ( printf "%s.%s.svc.cluster.local" (include "worker.serviceName" .) .Values.worker.redis.namespace ) }}
-{{- end }}
-
-{{/*
-Generate worker certificate authority to connect to Redis
-*/}}
-{{- define "worker.gen-certs" -}}
-{{- $expiration := (.Values.worker.ca.expiration | int) -}}
-{{- if (or (empty .Values.worker.ca.cert) (empty .Values.worker.ca.key)) -}}
-{{- $ca :=  genCA "redis-ca" $expiration -}}
-{{- template "worker.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Generate worker client key and cert from CA  to connect to Redis
-*/}}
-{{- define "worker.gen-client-tls" -}}
-{{- $altNames := list ( include "worker.service.fullname" .RootScope) (printf "*.%s" ( include "worker.service.fullname" .RootScope)) "127.0.0.1" "localhost" -}}
-{{- $expiration := (.RootScope.Values.worker.ca.expiration | int) -}}
-{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
-{{- $clientCert := $cert.Cert | b64enc -}}
-{{- $clientKey := $cert.Key | b64enc -}}
-caCert: {{ .CA.Cert | b64enc }}
-clientCert: {{ $clientCert }}
-clientKey: {{ $clientKey }}
-{{- end -}}
 
 {{/*
 Create the name of the service to use
@@ -262,3 +297,15 @@ caCert: {{ .CA.Cert | b64enc }}
 clientCert: {{ $clientCert }}
 clientKey: {{ $clientKey }}
 {{- end -}}
+
+{{/*
+###################### Other helpers ######################
+*/}}
+
+{{/*
+Create the json for the docker registry credentials
+*/}}
+{{- define "codesealer.imagePullSecret" -}}
+{{- printf "{\"auths\":{\"ghcr.io/code-sealer\":{\"username\":\"%s\",\"password\":\"%s\",\"auth\":\"%s\"}}}" "code-sealer" (required ".codesealerToken must be passed" .Values.codesealerToken) (printf "%s:%s" "code-sealer" .Values.codesealerToken | b64enc) | b64enc }}
+{{- end }}
+

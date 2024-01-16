@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-   {{- include "codesealer.labels" . | nindent 4 }}
-  name: {{ .Values.manager.name }}
+   {{- include "manager.labels" . | nindent 4 }}
+  name: {{ include "manager.name" . }}
   namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "codesealer.selectorLabels" . | nindent 6 }}
+      {{- include "manager.selectorLabels" . | nindent 6 }}
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-      {{- include "codesealer.labels" . | nindent 8 }}
+      {{- include "manager.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
       {{- with .Values.imagePullSecrets }}
@@ -23,7 +23,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ .Values.manager.name }}
+        - name: {{ include "manager.name" . }}
           image: "{{ .Values.image.repository }}/{{ .Values.manager.image }}:{{ .Values.manager.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:

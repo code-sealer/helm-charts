@@ -13,7 +13,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ .Values.worker.name }}
+  name: {{ include "worker.name" . }}
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "codesealer.labels" . | nindent 4 }}
@@ -37,7 +37,7 @@ spec:
   {{- end }}
   defaultBackend:
     service:
-      name: {{ .Values.worker.name }}
+      name: {{ include "worker.name" . }}
       port:
         number: {{ .Values.worker.service.port }}
 {{- end }}
