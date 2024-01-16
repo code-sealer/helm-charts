@@ -40,6 +40,54 @@ webhook:
     targetPort: 8443
     scheme: HTTPS
 
+  # The path for the webhook
+  path: "/mutate-codesealer"
+
+  # How the mutating webhook fails
+  failurePolicy: Ignore
+
+  # The timeout for the webhook
+  timeout: 5
+
+  # default to NoneOnDryRun
+  sideEffects: "None"
+
+  # default to Never
+  reinvocationPolicy: "Never"
+
+  # Annotations to add to service. (Optional)
+  annotations: {}
+
+  # admission CA can be used to override the Certs that will be used
+  # to sign the keys used by the admission operator.
+  ca:
+    # disable if manually creating certs
+    # provide cert and key via --set-file
+    create: true
+    # # A base64 encoded PEM format certificate
+    # cert: ""
+    # # A base64 encoded PEM format private key
+    # key: ""
+    # Expiry time of CA in days for generated certs
+    expiration: 365
+
+  # admission secret with client certs mounted within the admission controller.
+  secret:
+    create: true
+    # name of the secret (auto-generated)
+    name: "codesealer-mutating-webhook-cert"
+    type: Opaque
+    # type: kubernetes.io/tls
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    cert: ""
+    # PEM format certificate (auto-generated)
+    # override via --set-file
+    key: ""
+    # override via --set-file
+    # Annotations to add to admission secret. (Optional)
+    annotations: {}
+
   annotations: {}
 
   env:
@@ -114,63 +162,6 @@ sidecar:
     deployment: ingress-nginx-controller
     port: 443
     nodePort: 31443
-
-admission:
-  # The name of the admission to use.
-  # If not set, a name is generated using the fullname template
-  name: "codesealer-mutating-webhook"
-
-  # The path for the webhook
-  path: "/mutate-codesealer"
-
-  # How the mutating webhook fails
-  failurePolicy: Ignore
-
-  # The timeout for the webhook
-  timeout: 5
-
-  # default to NoneOnDryRun
-  sideEffects: "None"
-
-  # default to Never
-  reinvocationPolicy: "Never"
-
-  # Annotations to add to service. (Optional)
-  annotations: {}
-
-  labels:
-    app: codesealer-mutating-webhook
-    service: codesealer-mutating-webhook
-
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
-  ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
-    create: true
-    # # A base64 encoded PEM format certificate
-    # cert: ""
-    # # A base64 encoded PEM format private key
-    # key: ""
-    # Expiry time of CA in days for generated certs
-    expiration: 365
-
-  # admission secret with client certs mounted within the admission controller.
-  secret:
-    create: true
-    # name of the secret (auto-generated)
-    name: "codesealer-mutating-webhook-cert"
-    type: Opaque
-    # type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    key: ""
-    # override via --set-file
-    # Annotations to add to admission secret. (Optional)
-    annotations: {}
 
 worker:
   name: codesealer-core

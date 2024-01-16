@@ -232,8 +232,8 @@ Create service fully qualified hostname
 Generate certificate authority
 */}}
 {{- define "webhook.gen-certs" -}}
-{{- $expiration := (.Values.admission.ca.expiration | int) -}}
-{{- if (or (empty .Values.admission.ca.cert) (empty .Values.admission.ca.key)) -}}
+{{- $expiration := (.Values.webhook.ca.expiration | int) -}}
+{{- if (or (empty .Values.webhook.ca.cert) (empty .Values.webhook.ca.key)) -}}
 {{- $ca :=  genCA "webhook-ca" $expiration -}}
 {{- template "webhook.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
 {{- end -}}
@@ -244,7 +244,7 @@ Generate client key and cert from CA
 */}}
 {{- define "webhook.gen-client-tls" -}}
 {{- $altNames := list ( include "webhook.service.fullname" .RootScope) -}}
-{{- $expiration := (.RootScope.Values.admission.ca.expiration | int) -}}
+{{- $expiration := (.RootScope.Values.webhook.ca.expiration | int) -}}
 {{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
 {{- $clientCert := $cert.Cert | b64enc -}}
 {{- $clientKey := $cert.Key | b64enc -}}

@@ -53,15 +53,15 @@ spec:
             initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
           volumeMounts:
-            - name: {{ .Values.admission.secret.name }}
+            - name: {{ .Values.webhook.secret.name }}
               mountPath: /certs
               readOnly: true
             - name: codesealer-mutating-webhook-patch
               mountPath: /patch
       volumes:
-        - name: {{ .Values.admission.secret.name }}
+        - name: {{ .Values.webhook.secret.name }}
           secret:
-            secretName: {{ .Values.admission.secret.name }}
+            secretName: {{ .Values.webhook.secret.name }}
         - name: codesealer-mutating-webhook-patch
           configMap:
             name: codesealer-mutating-webhook-patch

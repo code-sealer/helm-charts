@@ -1,15 +1,15 @@
 {{- if .Values.sidecar.enabled }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
-{{- if .Values.admission.secret.create }}
+{{- if .Values.webhook.secret.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  name: {{ .Values.admission.secret.name }}
+  name: {{ .Values.webhook.secret.name }}
   namespace: {{ .Values.webhook.namespace }}
-type: {{ .Values.admission.secret.type }}
+type: {{ .Values.webhook.secret.type }}
 data:
   # Cert for {{ include "webhook.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}
@@ -19,7 +19,7 @@ data:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{ .Values.admission.name }}
+  name: {{ .Values.webhook.name }}
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
   namespace: {{ .Values.webhook.namespace }}
@@ -31,11 +31,11 @@ webhooks:
       # url: "https://codesealer-mutating-webhook.codesealer-system.svc.cluster.local/mutate-codesealer"
       caBundle: {{ $tls.caCert }}
       service:
-        name: {{ .Values.admission.name }}
+        name: {{ .Values.webhook.name }}
         namespace: {{ .Values.webhook.namespace }}
-        path: {{ .Values.admission.path }}
+        path: {{ .Values.webhook.path }}
         port: {{ .Values.webhook.service.port }}
-    failurePolicy: {{ .Values.admission.failurePolicy }}
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
     matchPolicy: Equivalent
     name: mutating-webhook.codesealer.com
     namespaceSelector:
@@ -45,7 +45,7 @@ webhooks:
           values:
             - enabled
     objectSelector: {}
-    reinvocationPolicy: {{ .Values.admission.reinvocationPolicy }}
+    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
     rules:
       - apiGroups:
           - "*"
@@ -57,6 +57,6 @@ webhooks:
         resources:
           - "pods"
         scope: "Namespaced"
-    sideEffects: {{ .Values.admission.sideEffects }}
-    timeoutSeconds: {{ .Values.admission.timeout }}
+    sideEffects: {{ .Values.webhook.sideEffects }}
+    timeoutSeconds: {{ .Values.webhook.timeout }}
 {{- end }}
