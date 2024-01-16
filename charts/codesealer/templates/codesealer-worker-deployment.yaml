@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   labels:
    {{- include "worker.labels" . | nindent 4 }}
-  name: {{ .Values.worker.name }}
+  name: {{ include "worker.name" . }}
   namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.worker.replicaCount }}
@@ -24,7 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ .Values.worker.name }}
+        - name: {{ include "worker.name" . }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
           {{ if .Values.worker.controlURL }}
           args: ["--control", "{{ .Values.worker.controlURL}}", "--clusterKey", "{{ .Values.worker.clusterKey}}"]

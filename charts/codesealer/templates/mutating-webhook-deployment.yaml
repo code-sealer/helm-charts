@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.webhook.name }}
+  name: {{ include "webhook.name" . }}
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
   namespace: {{ .Values.webhook.namespace }}
@@ -23,7 +23,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ .Values.webhook.name }}
+        - name: {{ include "webhook.name" . }}
           image: "{{ .Values.image.repository }}/{{ .Values.webhook.image }}:{{ .Values.webhook.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -53,15 +53,15 @@ spec:
             initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
           volumeMounts:
-            - name: {{ include "webhook.secretName" . }}
+            - name: {{ .Values.admission.secret.name }}
               mountPath: /certs
               readOnly: true
             - name: codesealer-mutating-webhook-patch
               mountPath: /patch
       volumes:
-        - name: {{ include "webhook.secretName" . }}
+        - name: {{ .Values.admission.secret.name }}
           secret:
-            secretName: {{ include "webhook.secretName" . }}
+            secretName: {{ .Values.admission.secret.name }}
         - name: codesealer-mutating-webhook-patch
           configMap:
             name: codesealer-mutating-webhook-patch

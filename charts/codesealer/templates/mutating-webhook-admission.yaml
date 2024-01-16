@@ -7,7 +7,7 @@ kind: Secret
 metadata:
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  name: {{ include "webhook.secretName" . }}
+  name: {{ .Values.admission.secret.name }}
   namespace: {{ .Values.webhook.namespace }}
 type: {{ .Values.admission.secret.type }}
 data:

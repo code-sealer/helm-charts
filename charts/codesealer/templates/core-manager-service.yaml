@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-   {{- include "codesealer.labels" . | nindent 4 }}
-  name: {{ .Values.manager.name }}
+   {{- include "manager.labels" . | nindent 4 }}
+  name: {{ include "manager.serviceName" . }}
   namespace: {{ .Values.namespace }}
 spec:
   ports:
@@ -11,4 +11,4 @@ spec:
       port: {{ .Values.manager.service.port }}
       targetPort: {{ .Values.manager.config.listen }}
   selector:
-    {{- include "codesealer.selectorLabels" . | nindent 6 }}
+    {{- include "manager.selectorLabels" . | nindent 6 }}
