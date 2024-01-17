@@ -269,51 +269,6 @@ Get name of the Redis master service
 {{- end -}}
 
 {{/*
-###################### Ingress helpers ######################
-*/}}
-
-{{/*
-Create the name of the service to use
-*/}}
-{{- define "ingress.serviceName" -}}
-{{- range $host := .Values.ingress.hosts }}
-{{- $host.host | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Create service fully qualified hostname
-*/}}
-{{- define "ingress.service.fullname" -}}
-{{- default ( printf "%s" (include "ingress.serviceName" .) ) }}
-{{- end }}
-
-{{/*
-Generate Ingress certificate authority
-*/}}
-{{- define "ingress.gen-certs" -}}
-{{- $expiration := (.Values.ingress.ca.expiration | int) -}}
-{{- if (or (empty .Values.ingress.ca.cert) (empty .Values.ingress.ca.key)) -}}
-{{- $ca :=  genCA "ingress-ca" $expiration -}}
-{{- template "ingress.gen-client-tls" (dict "RootScope" . "CA" $ca) -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Generate Ingress client key and cert from CA
-*/}}
-{{- define "ingress.gen-client-tls" -}}
-{{- $altNames := list ( include "ingress.service.fullname" .RootScope) -}}
-{{- $expiration := (.RootScope.Values.ingress.ca.expiration | int) -}}
-{{- $cert := genSignedCert ( include "codesealer.fullname" .RootScope) nil $altNames $expiration .CA -}}
-{{- $clientCert := $cert.Cert | b64enc -}}
-{{- $clientKey := $cert.Key | b64enc -}}
-caCert: {{ .CA.Cert | b64enc }}
-clientCert: {{ $clientCert }}
-clientKey: {{ $clientKey }}
-{{- end -}}
-
-{{/*
 ###################### Other helpers ######################
 */}}
 
