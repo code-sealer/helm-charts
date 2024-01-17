@@ -32,10 +32,15 @@ spec:
             containerPort: {{ .Values.manager.config.listen }}
             protocol: TCP
           env:
-          {{- range $key, $value := .Values.manager.env }}
-            - name: {{ $key }}
-              value: {{ tpl $value $ | quote }}
-          {{- end }}
+          - name: REDIS_PASSWORD
+            {{ if .Values.redis.install }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "redis.secretName" .Subcharts.redis }}
+                key: {{ include "redis.secretPasswordKey" .Subcharts.redis }}
+            {{ else }}
+            value: {{ .Values.redis.auth.password }}
+            {{ end }}
           volumeMounts:
             - mountPath: /etc/codesealer-core/config.toml
               subPath: config.toml

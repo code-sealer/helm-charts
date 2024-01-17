@@ -26,10 +26,9 @@ data:
     useProxyProtocol = {{ .Values.worker.config.network.useProxyProtocol }}
 
     [bootloader]
-    redisAddress = ["{{ .Values.worker.redis.service.name }}.{{ .Values.worker.redis.namespace }}.svc.cluster.local:{{ .Values.worker.redis.service.port }}"]
-    redisMaster = {{ .Values.worker.config.bootloader.redisMaster | quote }}
-    redisUser = {{ .Values.worker.config.bootloader.redisUser | quote }}
-    redisPassword = {{ .Values.worker.config.bootloader.redisPassword | quote }}
+    redisAddress = ["{{ include "redis.serviceName" . }}"]
+    redisUser = "default"
+    redisPassword = "${REDIS_PASSWORD}"
     redisUseTLS = {{ .Values.worker.config.bootloader.redisUseTLS }}
     redisMaxConn = {{ .Values.worker.config.bootloader.redisMaxConn }}
     redisIgnoreTLS = {{ .Values.worker.config.bootloader.redisIgnoreTLS }}

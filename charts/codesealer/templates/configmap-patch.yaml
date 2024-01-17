@@ -57,6 +57,9 @@ data:
             - name: crs-setup-conf
               mountPath: /etc/codesealer-core/modsecurity/crs-setup.conf
               subPath: crs-setup.conf
+          env:
+          - name: REDIS_PASSWORD
+            value: {{ .Values.redis.auth.password }}
       volumes:
         - name: config-toml
           configMap:

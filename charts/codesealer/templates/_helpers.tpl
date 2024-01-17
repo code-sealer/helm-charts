@@ -254,6 +254,21 @@ clientKey: {{ $clientKey }}
 {{- end -}}
 
 {{/*
+###################### Redis helpers ######################
+*/}}
+
+{{/*
+Get name of the Redis master service
+*/}}
+{{- define "redis.serviceName" -}}
+{{- if (.Values.redis.install) -}}
+{{- printf "%s-master.%s.svc.cluster.local:%v" (include "common.names.fullname" .Subcharts.redis) .Values.namespace .Values.redis.service.ports.redis -}}
+{{- else -}}
+{{- printf "%s.%s.svc.cluster.local:%v" .Values.redis.service.name .Values.redis.namespace .Values.redis.service.ports.redis -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 ###################### Ingress helpers ######################
 */}}
 

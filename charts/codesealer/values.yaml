@@ -99,6 +99,23 @@ sidecar:
     port: 443
     nodePort: 31443
 
+redis:
+  install: true
+
+  namespace: "redis"
+
+  service:
+    name: "redis-master"
+    ports:
+      redis: 6379
+
+  replica:
+    replicaCount: 1
+
+  auth:
+    enabled: true
+    password: ""
+
 worker:
   name: codesealer-core
   replicaCount: 1
@@ -110,13 +127,6 @@ worker:
 
   # Cluster key for hybrid mode
   clusterKey: ""
-
-  redis:
-    namespace: redis
-
-    service:
-      name: "redis-master"
-      port: 6379
 
   service:
     type: ClusterIP
@@ -200,14 +210,6 @@ worker:
     ################################################
     # The 'bootloader' section contains some basic configuration of the Bootloader.
     bootloader:
-      # Addresses of redis nodes
-      redisAddress: ""
-      # If Redis Sentinel is used, this sets the master name
-      redisMaster: ""
-      # Username for redis
-      redisUser: "default"
-      # Password for redis
-      redisPassword: ""
       # Whether to use TLS for redis connections
       redisUseTLS: false
       # The maximum number of Redis connections to pool. Note that this is per Worker
