@@ -166,7 +166,7 @@ worker:
     # The 'network' section defines the basic server configuration of the reverse proxy.
     network:
       # The IP and port to listen for requests on.
-      listen: 9443
+      listen: 8443
       # If true, TLS will be enabled.
       tls: true
       # Sets the minimum TLS version the reverse proxy will use. Allowed values are:
@@ -544,58 +544,15 @@ manager:
       backendID: "default"
 
 # Ingress Parameters for Core-Manager
-ingress:
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    kubernetes.io/ingress.class: nginx
-    kubernetes.io/tls-acme: "true"
-  # For implementation that don't support a LoadBalancer
-  nodePort: 
-    enabled: false
+ingress-nginx:
+  install: false
 
-  nodePort:
-    enabled: false
+  controller:
+    hostPort:
+      enabled: false
 
-  hosts:
-    - host: localhost
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-   - secretName: ingress-tls
-     hosts:
-       - localhost
-
-  labels: {}
-
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
-  ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
-    create: true
-    # # A base64 encoded PEM format certificate
-    cert: ""
-    # # A base64 encoded PEM format private key
-    key: ""
-    # Expiry time of CA in days for generated certs
-    expiration: 365
-
-  # admission secret with client certs mounted within the admission controller.
-  cert:
-    create: true
-    # name of the secret (auto-generated)
-    name: ingress-tls
-    type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    key: ""
-    # override via --set-file
-    annotations: {}
+    service:
+      type: LoadBalancer
 
 influxDB:
   influxAddress: ""
