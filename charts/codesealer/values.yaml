@@ -97,7 +97,6 @@ sidecar:
     namespace: ingress-nginx
     deployment: ingress-nginx-controller
     port: 443
-    nodePort: 31443
 
 redis:
   install: true

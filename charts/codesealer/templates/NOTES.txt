@@ -6,11 +6,7 @@ To enable Codesealer on Ingress Controller:
   $ kubectl patch deployment {{ .Values.sidecar.ingress.deployment }} -n {{ .Values.sidecar.ingress.namespace }} \
     -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":{{ .Values.sidecar.ingress.port }}}}}} }'
 
-{{- if .Values.ingress.nodePort.enabled }}
-The application can be accessed at https://localhost:{{ .Values.sidecar.ingress.nodePort }}
-{{ else }}
 The application can be accessed at https://localhost:{{ .Values.sidecar.ingress.port }}
-{{- end }}
 {{- end }}
 
 ---------------
