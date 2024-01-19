@@ -12,7 +12,7 @@ metadata:
   {{ else }}
   namespace: {{ .Values.namespace }}
   {{- end }}
-type: {{ .Values.worker.cert.type }}
+type: kubernetes.io/tls
 data:
   # Cert for {{ include "worker.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}

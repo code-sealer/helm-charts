@@ -18,10 +18,8 @@ spec:
       {{- include "manager.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      - name: {{ template "codesealer.imagePullSecretName" . }}
       containers:
         - name: {{ include "manager.name" . }}
           image: "{{ .Values.image.repository }}/{{ .Values.manager.image }}:{{ .Values.manager.tag | default .Chart.AppVersion }}"
@@ -56,7 +54,7 @@ spec:
             - mountPath: /etc/core-manager
               name: {{ .Values.manager.cert.name }}
               readOnly: true
-      restartPolicy: {{ .Values.manager.restartPolicy }}
+      restartPolicy: Always
       volumes:
         - name: config-toml
           configMap:

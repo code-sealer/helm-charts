@@ -1,103 +1,223 @@
-# Codesealer Ingress Sidecar Helm Chart
+# Codesealer Helm Chart
 
-This Helm chart installs [Codesealer](https://codesealer.com) as a sidecar to an existing application
-using a Kubernetes Ingress Controller. Codesealer is injected into the same pod as the Ingress Controller
-and through an iptables preroute, Codesealer intercepts the traffic destined for the Ingress Controller and
-protects the code and APIs exposed by the application.
+1. [Introduction](#introduction)
+   1. [Standalone Mode](#standalone-mode)
+   1. [Sidecar Mode](#sidecar-mode)
+1. [Prerequisites](#prerequisites)
+1. [Installing](#installing)
+   1. [Standalone Mode](#standalone-mode)
+   1. [Sidecar Mode](#sidecar-mode)
+1. [Upgrading](#upgrading)
+1. [Uninstalling](#uninstalling)
+1. [Additional Setup](#additional-setup)
+   1. [Ingress](#ingress)
+   1. [Target Application](#target-application)
+1. [Kubernetes Implementation Specifics](#kubernetes-implementation-specifics)
+   1. [kind + NGINX](#kind--nginx)
+   1. [Minikube](#minikube)
 
-Like an Istio Service Mesh, the Codesealer sidecar can be injected through the following methods:
-  1. `initContainer` - requires `NET_ADMIN` privilege (default)
-  2. Container Network Interface (`CNI`)
-      - enabled by "--set initContainers.enabled=false" when installing the Helm Chart
+## Introduction
+
+This Helm chart allows you to install [Codesealer](https://codesealer.com) in two
+different ways: as a standalone deployment or as a sidecar to an existing ingress.
+
+If you need pointers on installing an ingress or a demo application to try out
+Codesealer with, see the [Addtional Setup](#additional-setup) section. The [Kubernetes
+Implementation Specifics](#kubernetes-implementation-specifics) section contains
+additional instructions for running Codesealer in various Kubernetes implementations.
+
+### Standalone Mode
+
+Codesealer can be installed as a standalone proxy, independent of an existing
+application deployment. The deployment architecture is show in the diagram below.
+
+![standalone proxy](./img/standalone-proxy.png)
+
+After deployment the Worker proxies can be configured through the Management Portal. The
+protected application can reside in the same cluster as the Codesealer deployment, but
+this is not a requirement for this deployment mode. This mode also allows Codesealer to
+be horizontally scaled independently of the application and to protect several different
+applications simultaneously.
+
+### Sidecar Mode
+
+Codesealer can be installed as a sidecar to an existing application using a Kubernetes
+Ingress Controller. In this mode, Codesealer is injected into the same pod as the
+Ingress Controller and through an iptables preroute, Codesealer intercepts the traffic
+destined for the Ingress Controller and protects the code and APIs exposed by the
+application.
+
+Like an Istio Service Mesh, the Codesealer sidecar can be injected through the following
+methods:
+
+1. (default) An init container that briefly runs in the same pod as the Ingress
+   Controller. This requires `NET_ADMIN` privilege.
+2. Container Network Interface (`CNI`), which does not require elevated privileges. This
+   can be enabled by setting `sidecar.initContainers.enabled=false` when installing the
+   Helm Chart.
+
+Codesealer's sidecar mode uses an Admission Webhook to install Codesealer in the same
+pod as an Ingress Controller. This diagram shows how the Admission Webhook comes into
+the picture. Codesealer is implemented as a `Mutating Admission` Webhook:
+
+![admission webhook flow](./img/webhook.png)
+
+The `Mutating Admission` Webhook injects Codesealer as a sidecar. Traffic originally
+destined for the Ingress Controller is prerouted to Codesealer and then passed back to
+the Ingress Controller. This approach requires no changes to the application other than
+providing Codesealer with the ingress certificates.
+
+![sidecar proxy](./img/sidecar-proxy.png)
+
+In this example the `Reverse Proxy` is Codesealer.  Traffic originally destined for the
+`Ingress Controller` over the ethernet `eth0` interface is prerouted to Codesealer for
+processing. Once Codesealer processes the payload it will send the traffic to the
+Ingress Controller over the loopback `lo` interface on the original port.
+
+Codesealer support multiple Ingress Controllers including NGINX Ingress, Contour, Istio
+Gateway, Kubernetes Gateway, and Cloud Provider Ingress Controllers (e.g. AWS ALB).
+
+Although this example uses an Ingress Controller for the injection, Codesealer can be
+injected into any pod to protect any service. It functions similar to an Istio Service
+Mesh which uses an Envoy Proxy instead.
 
 ## Prerequisites
 
-To use this Helm chart you will need an access token for the Codesealer Docker registry.
-In the following we assume that the access token is set in the following way:
+To use this helm chart you will need an access token for the Codesealer Docker registry,
+a Codesealer cluster key, and a URL for the Codesealer Control Plane. All of these can
+be obtained by creating a Cluster in the Codesealer Portal. In the following we assume
+that these values are set as follows:
 
 ```bash
-export CODESEALER_TOKEN=<access token>
+export CODESEALER_TOKEN="<Docker access token>"
+export CLUSTER_KEY="<Cluster key>"
+export CONTROL_URL="<Control Plane URL"
 ```
 
-This installation requires a Kubernetes Cluster with kubectl.  
+If you are installing Codesealer in sidecar mode, you will additionally need to set some variables related to your ingress:
+
+```bash
+export INGRESS_NAMESPACE="<Namespace of your ingress>"
+export INGRESS_DEPLOYMENT="<Name of your ingress deployment>"
+export INGRESS_PORT="<Port used by your ingress>"
+```
+
+If you need pointers on installing an ingress or a demo application to try out
+Codesealer with, see the [Addtional Setup](#additional-setup) section.
+
+## Installing
+
+To use this chart, first add the Codesealer Helm repository:
+
+```bash
+helm repo add codesealer https://code-sealer.github.io/helm-charts
+```
+
+To view documentation for all the Chart's values, run:
+
+```bash
+helm show values codesealer/codesealer
+```
+
+### Standalone Mode
+
+To install Codesealer in standalone mode, run the following command:
+
+```bash
+helm install codesealer codesealer/codesealer \
+  --create-namespace --namespace codesealer \
+  --set codesealerToken="$CODESEALER_TOKEN" \
+  --set worker.clusterKey="$CLUSTER_KEY" \
+  --set worker.controlURL="$CONTROL_URL"
+```
+
+After deployment, Codesealer's Management Portal can be accessed through port forward:
+
+```bash
+kubectl port-forward service/core-manager -n codesealer-system 8444:8444
+```
+
+### Sidecar Mode
+
+To install Codesealer in sidecar mode, run the following command:
+
+```bash
+helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer \
+  --set codesealerToken="$CODESEALER_TOKEN" \
+  --set worker.clusterKey="$CLUSTER_KEY" \
+  --set worker.controlURL="$CONTROL_URL" \
+  --set sidecar.enabled=true \
+  --set sidecar.ingress.namespace="$INGRESS_NAMESPACE" \
+  --set sidecar.ingress.deployment="$INGRESS_DEPLOYMENT" \
+  --set sidecar.ingress.port="$INGRESS_PORT" \
+  --set-literal manager.init='{"Organizations":{"ffffffff-ffff-ffff-ffff-ffffffffffff":{"Name":"Default Organization","BackendID":"default","Endpoints":{"ffffffff-ffff-ffff-ffff-ffffffffffff":{"inScheme":"http","outScheme":"http","outHostname":"localhost"}},"AllowedDomains":["*"]}}}'
+```
+
+To inject the sidecar into your ingress, label and patch your ingress deployment as
+follows:
+
+```bash
+kubectl label ns ingress-nginx codesealer.com/webhook=enabled
+kubectl patch deployment ingress-nginx-controller \
+  -n ingress-nginx \
+  -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled"}}}} }'
+```
+
+The ingress controller should restart with an additional Codesealer container. If you
+need to modify the default configuration of the Worker, Codesealer's Management Portal
+can be accessed through port forward:
+
+```bash
+kubectl port-forward service/core-manager -n codesealer-system 8444:8444
+```
+
+## Upgrading
+
+To update an existing deployment, make sure to first update the repository:
+
+```bash
+helm repo update codesealer
+```
+
+To upgrade the deployment using the same values, run the following command:
+
+```bash
+helm upgrade --reuse-values --namespace codesealer codesealer codeealer/codesealer
+```
+
+If you want to specify new values, replace the `--reuse-values` flag with the
+appropriate `--set` flags.
+
+## Uninstalling
+
+To uninstall a Codesealer deployment, run the following commands:
+
+```bash
+helm uninstall codesealer --namespace codesealer
+helm repo remove codesealer
+```
+
+## Additional Setup
 
 ### Ingress
 
-The following Kubernetes Ingress Controllers are supported:
-  1. Minikube Ingress Addon: https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
-  2. NGINX Ingress Controller: https://docs.nginx.com/nginx-ingress-controller/
-  3. Contour Ingress Controller: https://projectcontour.io/docs/v1.10.0/
-  4. Istio Ingress Gateway: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-  5. Public Cloud Ingress Controllers
+In sidecar mode, Codesealer injects itself into an existing Ingress. The following
+Kubernetes Ingress Controllers are supported:
+1. [Minikube Ingress Addon](https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/)
+2. [NGINX Ingress Controller](https://docs.nginx.com/nginx-ingress-controller/)
+3. [Contour Ingress Controller](https://projectcontour.io/docs/v1.10.0/)
+4. [Istio Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/)
+5. Public Cloud Ingress Controllers
 
-This installation also will configure your NGINX Ingress Controller to operate with one the
-following 2 Kubernetes Ingress Controller service types:
-  1.  `LoadBalancer` (default)
-      Use on Production implementations or local configurations that support routing
-      to local LoadBalancer over port 443.
-      - MacBooks using Docker Desktop with Kubernetes may support this configuration
-      - This configuration works best with a Kubernetes Kind Cluster
-  2.  `NodePort`
-      Use for local installations that do not support a LoadBalancer configuration.
-      - Use this configuration if LoadBalancer option does not work
-      - Enabled by "--set ingress.nodePort.enabled=false" when the Helm Chart.
-
-To use this Helm chart you will also need to set the following variables to match
-your Ingress Controller's deployment on your Kubernetes Cluster:
-
-```bash
-export INGRESS_HELM_REPO=https://kubernetes.github.io/ingress-nginx
-export INGRESS_HELM_CHART=ingress-nginx
-export INGRESS_NAMESPACE=ingress-nginx
-export INGRESS_DEPLOYMENT=ingress-nginx-controller
-export INGRESS_PORT=443
-export INGRESS_NODEPORT=31443
-```
-
-Additionally you will need an ingress and an application to protect. Below are steps to
-get started with a demo application and an NGINX Ingress. For guides on how to use this
-Helm chart with specific Kubernetes implementations, see the ["Kubernetes Implementation
-Specifics"](#kubernetes-implementation-specifics) section.
-
-This Helm chart will install Codesealer as a sidecar to an existing ingress deployment.
-
-If you don't have an ingress already, you can install an [NGINX Ingress Controller](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx) 
+If you don't have an ingress already, you can install an [NGINX Ingress Controller](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx)
 using the following command:
 
 ```bash
-helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
-helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
-  --namespace ${INGRESS_NAMESPACE} --create-namespace \
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
   --wait --timeout=60s
 ```
-
-> NOTE: If using a NodePort instead of a LoadBalancer, install the Ingress using the following variation
->       specifiying the desired port to use
->
-> ```bash
-> export INGRESS_NODEPORT=31443
-> ```
->
-> ```bash
-> helm repo add ${INGRESS_HELM_CHART} ${INGRESS_HELM_REPO}
-> helm install ${INGRESS_HELM_CHART} ${INGRESS_HELM_CHART}/ingress-nginx \
->   --namespace ${INGRESS_NAMESPACE} --create-namespace \
->   --set controller.hostPort.enabled=true \
->   --set controller.service.type=NodePort \
->   --set controller.service.nodePorts.https=${INGRESS_NODEPORT} \
->   --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
->   --wait --timeout=60s
-> ```
->
-> See also the notes on Kind in the ["Kubernetes Implementation
-> Specifics"](#kubernetes-implementation-specifics) section.
-
-> NOTE: If you using Minikube it works best with the Ingress addon
->
-> ```bash
-> minikube addons enable ingress
-> minikube tunnel
-> ```
 
 ### Target Application
 
@@ -116,148 +236,13 @@ helm install juice-shop securecodebox/juice-shop --namespace juice-shop --create
   --wait --timeout=60s
 ```
 
-### Redis
-
-To use this Helm chart you will also need to set the following variable to match
-your Redis deployment on your Kubernetes Cluster:
-
-```bash
-export REDIS_NAMESPACE=redis
-```
-
-Codesealer requires Redis. If you don't have your own implementation of Redis you can install 
-[Bitnami package for Redis(R)](https://github.com/bitnami/charts/blob/main/bitnami/redis/README.md) 
-using the following command:
-
-```bash
-helm install redis oci://registry-1.docker.io/bitnamicharts/redis \
-  --namespace ${REDIS_NAMESPACE} --create-namespace \
-  --set auth.enabled=true \
-  --set replica.replicaCount=1 \
-  --wait --timeout=60s
-```
-
-You will need the Redis generated password to install Codesealer.  You can get that password with
-the following command:
-
-```bash
-export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
-```
-
-## Installing
-
-To install the Codesealer Helm chart, please ensure the prerequisite parametes are defined and run the following commands:
-
-```bash
-helm repo add codesealer ${CODESEALER_HELM_REPO}
-helm install codesealer ${CODESEALER_HELM_CHART} \
-  --create-namespace --namespace codesealer-system \
-  --set codesealerToken="${CODESEALER_TOKEN}" \
-  --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
-  --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
-  --set worker.ingress.port="${INGRESS_PORT}" \
-  --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
-  --set worker.redis.namespace="${REDIS_NAMESPACE}" \
-  --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set sidecar.enabled=true \
-  --wait --timeout=60s
-```
-
-To enable Codesealer protection, please ensure the prerequisite parametes are defined
-and run the following commands:
-
-```bash
-kubectl label ns ${INGRESS_NAMESPACE} codesealer.com/webhook=enabled
-kubectl patch deployment "${INGRESS_DEPLOYMENT}" -n "${INGRESS_NAMESPACE}" \
-  -p '{"spec": {"template":{"metadata":{"annotations":{"codesealer.com/injection":"enabled", "codesealer.com/dport":"'${INGRESS_PORT}'"}}}} }'
-```
-
-Finally, restart your ingress deployment if they do not restart automatically:
-
-```bash
-kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
-kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
-```
-
-To see what Codesealer helm parameters are available issue the following command:
-
-```bash
-helm show values codesealer/codesealer
-```
-
-To access local manager issue the following command:
-
- ```bash
-kubectl port-forward service/core-manager -n codesealer-system 8444:8444 &
- ```
- You can access the manager at https://localhost:8444
-
-The first time core-manager is started, it will create a Maintenance Administrator. 
-To see the credentials for this account, find the admin credential in the core-manager log: 
-
-```bash
-POD=$(kubectl get pods -n codesealer-system | grep core-manager | cut -d " " -f1 )
-kubectl logs ${POD} -n codesealer-system | grep password
-```
-
-## Upgrading
-
-You will need the Redis generated password to upgrade Codesealer.  You can get that password with
-the following command:
-
-```bash
-export REDIS_PASSWORD=$(kubectl get secret --namespace ${REDIS_NAMESPACE} redis -o jsonpath="{.data.redis-password}" | base64 -d)
-```
-
-To upgrade an existing release, please ensure the prerequisite parametes are defined
-and run the following command instead:
-
-```bash
-helm repo update codesealer
-helm upgrade codesealer ${CODESEALER_HELM_CHART} \
-  --namespace codesealer-system \
-  --set codesealerToken="${CODESEALER_TOKEN}" \
-  --set worker.ingress.namespace="${INGRESS_NAMESPACE}" \
-  --set worker.ingress.deployment="${INGRESS_DEPLOYMENT}" \
-  --set worker.ingress.port="${INGRESS_PORT}" \
-  --set worker.ingress.nodePort="${INGRESS_NODEPORT}" \
-  --set worker.redis.namespace="${REDIS_NAMESPACE}" \
-  --set worker.config.bootloader.redisPassword="${REDIS_PASSWORD}" \
-  --set sidecar.enabled=true \
-  --wait --timeout=60s
-```
-
-Then restart the Codesealer deployment with the following command:
-
-```bash
-kubectl rollout restart deployments --namespace codesealer-system
-kubectl rollout status deployments --namespace codesealer-system
-kubectl rollout restart deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE}
-kubectl rollout status deployment/${INGRESS_DEPLOYMENT} --namespace ${INGRESS_NAMESPACE} --watch
-```
-
-## Uninstalling
-
-To uninstall a release,  run the following commands:
-
-```bash
-helm uninstall codesealer --namespace codesealer-system
-helm repo remove codesealer
-```
-
 ## Kubernetes Implementation Specifics
 
-### kind
+### kind + NGINX
 
-[`kind`](https://kind.sigs.k8s.io/) lets you run Kubernetes on
-your local computer. This tool requires that you have either
-[Docker](https://www.docker.com/) or [Podman](https://podman.io/) installed.
-
-The kind [Quick Start](https://kind.sigs.k8s.io/docs/user/quick-start/) page
-shows you what you need to do to get up and running with kind.
-
-For this chart to work with [Kind](https://kind.sigs.k8s.io/) use the following Kind
-configuration:
+To run this chart in sidecar mode with [kind](https://kind.sigs.k8s.io/) and the [NGINX
+Ingress Controller](https://docs.nginx.com/nginx-ingress-controller/), use the following
+Kind configuration:
 
 ```yaml
 kind: Cluster
@@ -279,10 +264,22 @@ nodes:
     protocol: TCP
 ```
 
-Workaround for `tls: failed to verify certificate: x509: certificate signed by unknown authority` error
+And deploy NGINX using the `hostPort` and `NodePort` options:
 ```bash
-CA=$(kubectl -n ${INGRESS_NAMESPACE} get secret ingress-nginx-admission -ojsonpath='{.data.ca}')
-kubectl patch validatingwebhookconfigurations ingress-nginx-admission --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value":"'$CA'"}]'  
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --set controller.hostPort.enabled=true \
+  --set controller.service.type=NodePort \
+  --set controller.updateStrategy.rollingUpdate.maxUnavailable=1 \
+  --wait --timeout=90s
 ```
 
-<a class="btn btn-primary" href="https://kind.sigs.k8s.io/docs/user/quick-start/" role="button" aria-label="View kind Quick Start Guide">View kind Quick Start Guide</a>
+### Minikube
+
+To run this chart in sidecar mode with [Minikube](https://minikube.sigs.k8s.io/docs/),
+the easiest way to deploy an ingress is to use the Ingress addon:
+
+```bash
+minikube addons enable ingress
+minikube tunnel
+```

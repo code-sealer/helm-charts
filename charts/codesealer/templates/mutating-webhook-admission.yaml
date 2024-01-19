@@ -1,16 +1,15 @@
 {{- if .Values.sidecar.enabled }}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
-{{- if .Values.webhook.cert.create }}
+{{- if .Values.sidecar.webhook.cert.create }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  name: {{ .Values.webhook.cert.name }}
-  namespace: {{ .Values.webhook.namespace }}
-type: {{ .Values.webhook.cert.type }}
-data:
+  name: {{ .Values.sidecar.webhook.cert.name }}
+  namespace: {{ .Values.namespace }}
+type: kubernetes.io/tls
   # Cert for {{ include "webhook.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}
   tls.key: {{ $tls.clientKey }}
@@ -19,10 +18,10 @@ data:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{ .Values.webhook.name }}
+  name: {{ .Values.sidecar.webhook.name }}
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  namespace: {{ .Values.webhook.namespace }}
+  namespace: {{ .Values.namespace }}
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -31,11 +30,11 @@ webhooks:
       # url: "https://codesealer-mutating-webhook.codesealer-system.svc.cluster.local/mutate-codesealer"
       caBundle: {{ $tls.caCert }}
       service:
-        name: {{ .Values.webhook.name }}
-        namespace: {{ .Values.webhook.namespace }}
-        path: {{ .Values.webhook.path }}
-        port: {{ .Values.webhook.service.port }}
-    failurePolicy: {{ .Values.webhook.failurePolicy }}
+        name: {{ .Values.sidecar.webhook.name }}
+        namespace: {{ .Values.namespace }}
+        path: {{ .Values.sidecar.webhook.path }}
+        port: {{ .Values.sidecar.webhook.service.port }}
+    failurePolicy: {{ .Values.sidecar.webhook.failurePolicy }}
     matchPolicy: Equivalent
     name: mutating-webhook.codesealer.com
     namespaceSelector:
@@ -45,7 +44,7 @@ webhooks:
           values:
             - enabled
     objectSelector: {}
-    reinvocationPolicy: {{ .Values.webhook.reinvocationPolicy }}
+    reinvocationPolicy: {{ .Values.sidecar.webhook.reinvocationPolicy }}
     rules:
       - apiGroups:
           - "*"
@@ -57,6 +56,6 @@ webhooks:
         resources:
           - "pods"
         scope: "Namespaced"
-    sideEffects: {{ .Values.webhook.sideEffects }}
-    timeoutSeconds: {{ .Values.webhook.timeout }}
+    sideEffects: {{ .Values.sidecar.webhook.sideEffects }}
+    timeoutSeconds: {{ .Values.sidecar.webhook.timeout }}
 {{- end }}

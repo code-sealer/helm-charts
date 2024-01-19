@@ -6,9 +6,9 @@ metadata:
   name: {{ include "webhook.name" . }}
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  namespace: {{ .Values.webhook.namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
-  replicas: {{ .Values.webhook.replicaCount }}
+  replicas: {{ .Values.sidecar.webhook.replicaCount }}
   selector:
     matchLabels:
       {{- include "webhook.selectorLabels" . | nindent 6 }}
@@ -18,48 +18,46 @@ spec:
       {{- include "webhook.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      - name: {{ template "codesealer.imagePullSecretName" . }}
       containers:
         - name: {{ include "webhook.name" . }}
-          image: "{{ .Values.image.repository }}/{{ .Values.webhook.image }}:{{ .Values.webhook.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.webhook.image }}:{{ .Values.sidecar.webhook.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.webhook.service.targetPort }}
+            - containerPort: {{ .Values.sidecar.webhook.service.targetPort }}
               name: webhook
               protocol: TCP
           env:
-          {{- range $key, $value := .Values.webhook.env }}
+          {{- range $key, $value := .Values.sidecar.webhook.env }}
             - name: {{ $key }}
               value: {{ tpl $value $ | quote }}
           {{- end }}
           livenessProbe:
-            failureThreshold: {{ .Values.probes.failureThreshold }}
+            failureThreshold: 10
             httpGet:
               path: /liveness
-              port: {{ .Values.webhook.service.targetPort }}
-              scheme: {{ .Values.webhook.service.scheme }}
-            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+              port: {{ .Values.sidecar.webhook.service.targetPort }}
+              scheme: {{ .Values.sidecar.webhook.service.scheme }}
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /readiness
-              port: {{ .Values.webhook.service.targetPort }}
+              port: {{ .Values.sidecar.webhook.service.targetPort }}
               scheme: HTTPS
-            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.probes.timeoutSeconds }}
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
           volumeMounts:
-            - name: {{ .Values.webhook.cert.name }}
+            - name: {{ .Values.sidecar.webhook.cert.name }}
               mountPath: /certs
               readOnly: true
             - name: codesealer-mutating-webhook-patch
               mountPath: /patch
       volumes:
-        - name: {{ .Values.webhook.cert.name }}
+        - name: {{ .Values.sidecar.webhook.cert.name }}
           secret:
-            secretName: {{ .Values.webhook.cert.name }}
+            secretName: {{ .Values.sidecar.webhook.cert.name }}
         - name: codesealer-mutating-webhook-patch
           configMap:
             name: codesealer-mutating-webhook-patch
