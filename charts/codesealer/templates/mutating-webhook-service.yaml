@@ -5,14 +5,14 @@ metadata:
   name: {{ include "webhook.serviceName" . }}
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  namespace: {{ .Values.webhook.namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
-  type: {{ .Values.webhook.service.type }}
+  type: {{ .Values.sidecar.webhook.service.type }}
   ports:
-    - port: {{ .Values.webhook.service.port }}
-      targetPort: {{ .Values.webhook.service.targetPort }}
+    - port: {{ .Values.sidecar.webhook.service.port }}
+      targetPort: {{ .Values.sidecar.webhook.service.targetPort }}
       protocol: TCP
-      name: {{ .Values.webhook.service.name }}
+      name: {{ .Values.sidecar.webhook.service.name }}
   selector:
     {{- include "webhook.selectorLabels" . | nindent 6 }}
 {{- end }}

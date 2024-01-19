@@ -1,163 +1,98 @@
-# Default values for codesealer.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# This file contains default values for the Codesealer Helm chart.
 
+###################################
+##        Global settings        ##
+###################################
+
+# The access token used to pull Codesealer images. This must be set.
+codesealerToken: ""
+
+# Global settings for Docker images.
 image:
+  # Which repository to pull images from.
   repository: ghcr.io/code-sealer
+
+  # The image pull policy to use for all images.
   pullPolicy: Always
 
-imagePullSecrets:
-  - name: regcred
-
+# Set to override the chart name used.
 nameOverride: ""
+
+# Set to override the fully qualified app name used.
 fullnameOverride: ""
+
+# The name of the Codesealer namespace.
 namespace: "codesealer-system"
 
-probes:
-  initialDelaySeconds: 30
-  timeoutSeconds: 5
-  failureThreshold: 10
+# Settings for the Codesealer service account.
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
 
-initContainers:
-  # If enabled Codesealer will use an initContainer to do the iptables pre-route
-  # If not enabled (false), it will use Codesealer's CNI which will be installed
-  enabled: true
-  name: codesealer-init-networking
-  image: codesealer-init-networking
-  tag: latest
-
-webhook:
-  name: codesealer-mutating-webhook
-  replicaCount: 1
-  namespace: codesealer-system
-  image: codesealer-webhook
-  tag: latest
-
-  service:
-    type: ClusterIP
-    name: https
-    port: 443
-    targetPort: 8443
-    scheme: HTTPS
-
-  # The path for the webhook
-  path: "/mutate-codesealer"
-
-  # How the mutating webhook fails
-  failurePolicy: Ignore
-
-  # The timeout for the webhook
-  timeout: 5
-
-  # default to NoneOnDryRun
-  sideEffects: "None"
-
-  # default to Never
-  reinvocationPolicy: "Never"
-
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
-  ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
-    create: true
-    # # A base64 encoded PEM format certificate
-    cert: ""
-    # # A base64 encoded PEM format private key
-    key: ""
-    # Expiry time of CA in days for generated certs
-    expiration: 365
-
-  # admission secret with client certs mounted within the admission controller.
-  cert:
-    create: true
-    # name of the secret (auto-generated)
-    name: "codesealer-mutating-webhook-cert"
-    type: Opaque
-    # type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    key: ""
-
-  env:
-    SSL_CRT_FILE_NAME: "/certs/tls.crt"
-    SSL_KEY_FILE_NAME: "/certs/tls.key"
-    PATCH_FILE_NAME: "/patch/patch.yaml"
-
-sidecar:
-  # If true deploy as a side car
-  enabled: false
-
-  # Ingress Controller intercept parameters
-  ingress:
-    # Namespace where the Ingress Controller resides
-    namespace: ingress-nginx
-    deployment: ingress-nginx-controller
-    port: 443
-
-redis:
-  install: true
-
-  namespace: "redis"
-
-  service:
-    name: "redis-master"
-    ports:
-      redis: 6379
-
-  replica:
-    replicaCount: 1
-
-  auth:
-    enabled: true
-    password: ""
+###################################
+##        Worker settings        ##
+###################################
 
 worker:
+  # Name to use for worker related resources.
   name: codesealer-core
-  replicaCount: 1
+
+  # Docker image to use for the workers.
   image: release/codesealer-core-hybrid-modsec
+
+  # Docker image tag to use for the workers.
   tag: latest
 
-  # URL to control plane for hybrid mode
+  # Number of workers to create in standalone mode.
+  replicaCount: 1
+
+  # URL for the Codesealer Control Plane.
   controlURL: ""
 
-  # Cluster key for hybrid mode
+  # Cluster key for API access to the Control Plane.
   clusterKey: ""
 
+  # Settings that determine how to create a service for the Workers.
+  # A service is only created in standalone mode.
   service:
     type: ClusterIP
     name: https
     port: 8443
 
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
+  # Settings for the CA used to sign certificates for the Workers.
   ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
+    # Set to false if manually creating certificates. In this case, provide the cert and
+    # key values below.
     create: true
-    # # A base64 encoded PEM format certificate
+
+    # A base64 encoded PEM format certificate and key.
     cert: ""
-    # # A base64 encoded PEM format private key
     key: ""
-    # Expiry time of CA in days for generated certs
+
+    # Expiry time of CA in days for generated certs.
     expiration: 365
 
-  # admission secret with client certs mounted within the admission controller.
+  # Settings for the certificates used by the Workers.
   cert:
+    # Set to false if manually creating certificates. In this case, provide the cert and
+    # key values below.
     create: true
-    # name of the secret (auto-generated)
+
+    # Name of the TLS secret.
     name: codesealer-worker-tls
-    type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
+
+    # A base64 encoded PEM format certificate and key.
     cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
     key: ""
 
+  # Worker configuration.
   config:
     ################################################
     #               Network settings               #
@@ -241,7 +176,7 @@ worker:
     #               Cache settings                 #
     ################################################
     # The 'cache' settings controls some basic settings of the Worker's HTTP cache.
-    cache: 
+    cache:
       # A path to folder where the cached files will be stored. The path must be absolute.
       # Note that *all* contents of the folder will be deleted when the Worker starts.
       folder: ""
@@ -253,7 +188,7 @@ worker:
     ################################################
     #                 WAF settings                 #
     ################################################
-    modsecurity: 
+    modsecurity:
       # Enable ModSecurity, attaching it to every transaction. Use detection
       # only to start with, because that minimises the chances of post-installation
       # disruption.
@@ -275,7 +210,7 @@ worker:
       # when SecRuleEngine is set to DetectionOnly mode in order to minimize
       # disruptions when initially deploying ModSecurity.
       SecRequestBodyLimitAction: Reject
-      # Allow ModSecurity to access response bodies. 
+      # Allow ModSecurity to access response bodies.
       # You should have this directive enabled in order to identify errors
       # and data leakage issues.
       # Do keep in mind that enabling this directive does increases both
@@ -291,7 +226,7 @@ worker:
       # and notice messages from the error log.
       SecDebugLogLevel: 3
       # Log the transactions that are marked by a rule, as well as those that
-      # trigger a server error (determined by a 5xx or 4xx, excluding 404,  
+      # trigger a server error (determined by a 5xx or 4xx, excluding 404,
       # level response status codes).
       SecAuditEngine: RelevantOnly
       SecAuditLogRelevantStatus: "^(?:5|4(?!04))"
@@ -304,7 +239,7 @@ worker:
       # version, Anonymous unique id for host.
       SecStatusEngine: "On"
 
-      crs: 
+      crs:
         # The Paranoia Level (PL) setting allows you to choose the desired level
         # of rule checks that will add to your anomaly scores.
         paranoiaLevel: 1
@@ -312,7 +247,7 @@ worker:
         # them in the anomaly scoring. This allows you to take a well-tuned system on
         # paranoia level 1 and add rules from paranoia level 2 without having to fear
         # the new rules would lead to false positives that raise your score above the
-        # threshold.     
+        # threshold.
         executing_paranoia_level: 1
         # ModSecurity selects the body processor based on the Content-Type request
         # header. But clients are not always setting the Content-Type header for their
@@ -461,65 +396,60 @@ worker:
           enabled: true
           tags: []
         # EXCLUSION-RULES-AFTER-CRS
-        rules999: 
+        rules999:
           enabled: false
           tags: []
 
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+###################################
+##        Manager settings       ##
+###################################
 
 manager:
+  # Name to use for worker related resources.
   name: core-manager
-  restartPolicy: Always
+
+  # Docker image to use for the workers.
   image: release/core-manager
+
+  # Docker image tag to use for the workers.
   tag: latest
+
+  # An initial seed value for organization settings.
   init: ""
 
+  # Settings that determine how to create a service for the Manager.
   service:
     type: ClusterIP
     name: https
     port: 8444
 
-  # admission CA can be used to override the Certs that will be used
-  # to sign the keys used by the admission operator.
+  # Settings for the CA used to sign certificates for the Manager.
   ca:
-    # disable if manually creating certs
-    # provide cert and key via --set-file
+    # Set to false if manually creating certificates. In this case, provide the cert and
+    # key values below.
     create: true
-    # # A base64 encoded PEM format certificate
+
+    # A base64 encoded PEM format certificate and key.
     cert: ""
-    # # A base64 encoded PEM format private key
     key: ""
-    # Expiry time of CA in days for generated certs
+
+    # Expiry time of CA in days for generated certs.
     expiration: 365
 
-  # admission secret with client certs mounted within the admission controller.
+  # Settings for the certificates used by the Manager.
   cert:
+    # Set to false if manually creating certificates. In this case, provide the cert and
+    # key values below.
     create: true
-    # name of the secret (auto-generated)
-    name: codesealer-manager-tls
-    type: kubernetes.io/tls
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    cert: ""
-    # PEM format certificate (auto-generated)
-    # override via --set-file
-    key: ""
-    # override via --set-file
-    annotations: {}
 
-  ################################################
-  #               Manager settings               #
-  ################################################
-  # The 'manager' section defines some basic settings of the Mangement Portal.
+    # Name of the TLS secret.
+    name: codesealer-manager-tls
+
+    # A base64 encoded PEM format certificate and key.
+    cert: ""
+    key: ""
+
+  # Manager configuration
   config:
     # The IP and port to listen for requests on.
     listen: 7443
@@ -531,20 +461,149 @@ manager:
     # Configuration of Let's Encrypt certificates.
     letsEncrypt: false
     letsEncryptDomain: ""
-  
-    ################################################
-    #           Manager backend settings           #
-    ################################################
+
     # The 'manager.backend' section defines how to connect to Redis and InfluxDB.
     # Multiple backends can be defines in order for one Management Portal to connect to
-    # several sets for workers.
+    # several sets of workers.
     backend:
-    # The name of the backend.
+      # The name of the backend.
       backendID: "default"
 
-# Ingress Parameters for Core-Manager
+###################################
+##       Sidecar settings        ##
+###################################
+
+sidecar:
+  # If true, Codesealer is deployed as a side car to an existing ingress.
+  enabled: false
+
+  # Settings for the ingress to inject Codesealer into.
+  ingress:
+    # Namespace of the ingress.
+    namespace: ingress-nginx
+
+    # The targeted ingress deployment.
+    deployment: ingress-nginx-controller
+
+    # The port used by the ingress.
+    port: 443
+
+  # If enabled Codesealer will use an initContainer to do the iptables pre-route.
+  # If not enabled (false), it will use Codesealer's CNI which will be installed.
+  initContainers:
+    enabled: true
+    name: codesealer-init-networking
+    image: codesealer-init-networking
+    tag: latest
+
+  # Settings that affect the webhook used to inject Codesealer.
+  webhook:
+    # Name to use for webhook related resources.
+    name: codesealer-mutating-webhook
+
+    # Docker image to use for the webhooks.
+    image: codesealer-webhook
+
+    # Docker image tag to use for the webhooks.
+    tag: latest
+
+    # Number of webhooks to create.
+    replicaCount: 1
+
+    # Settings that determine how to create a service for the webhook.
+    service:
+      type: ClusterIP
+      name: https
+      port: 443
+      targetPort: 8443
+      scheme: HTTPS
+
+    # The path for the webhook.
+    path: "/mutate-codesealer"
+
+    # How the mutating webhook fails.
+    failurePolicy: Ignore
+
+    # The timeout for the webhook.
+    timeout: 5
+
+    # default to None.
+    sideEffects: "None"
+
+    # default to Never.
+    reinvocationPolicy: "Never"
+
+    # Settings for the CA used to sign certificates for the Webhook.
+    ca:
+      # Set to false if manually creating certificates. In this case, provide the cert and
+      # key values below.
+      create: true
+
+      # A base64 encoded PEM format certificate and key.
+      cert: ""
+      key: ""
+
+      # Expiry time of CA in days for generated certs.
+      expiration: 365
+
+    # Settings for the certificates used by the Webhook.
+    cert:
+      # Set to false if manually creating certificates. In this case, provide the cert and
+      # key values below.
+      create: true
+
+      # Name of the TLS secret.
+      name: codesealer-webhook-tls
+
+      # A base64 encoded PEM format certificate and key.
+      cert: ""
+      key: ""
+
+    env:
+      SSL_CRT_FILE_NAME: "/certs/tls.crt"
+      SSL_KEY_FILE_NAME: "/certs/tls.key"
+      PATCH_FILE_NAME: "/patch/patch.yaml"
+
+###################################
+##       Dependecy settings      ##
+###################################
+
+redis:
+  # If true, the Redis subchart will be installed. See the chart's values with
+  #   helm show values oci://registry-1.docker.io/bitnamicharts/redis | bat
+  # for a full list of all values that can be overridden.
+  install: true
+
+  namespaceOverride: "codesealer-system"
+
+  service:
+    name: "redis-master"
+    ports:
+      redis: 6379
+
+  replica:
+    replicaCount: 1
+
+  auth:
+    enabled: true
+
+    # Explicitly set a password for Redis, instead of autogenerating one.
+    # Note that a password must be set in two case:
+    # * When running Codesealer in sidecar mode.
+    # * When running Codesealer in standalone mode while installing redis in a separate
+    #   namespace.
+    password: ""
+
+# Settings for the Ingress NGINX Controller subchar. This can be installed in standalone
+# mode to expose the Workers outside the cluster.
+#
+# See the chart's values with
+#   helm show values ingress-nginx --repo https://kubernetes.github.io/ingress-nginx
+# for a full list of all values that can be overridden.
 ingress-nginx:
-  install: false
+  install: true
+
+  namespaceOverride: "codesealer-system"
 
   controller:
     hostPort:
@@ -552,8 +611,3 @@ ingress-nginx:
 
     service:
       type: LoadBalancer
-
-influxDB:
-  influxAddress: ""
-  influxToken: ""
-  influxIgnoreTLS: false

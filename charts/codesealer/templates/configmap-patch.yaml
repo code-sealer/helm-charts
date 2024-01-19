@@ -5,19 +5,17 @@ metadata:
   name: codesealer-mutating-webhook-patch
   labels:
    {{- include "webhook.labels" . | nindent 4 }}
-  namespace: {{ .Values.webhook.namespace }}
+  namespace: {{ .Values.namespace }}
 data:
   patch.yaml: |
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if .Values.initContainers.enabled }}
+      - name: {{ template "codesealer.imagePullSecretName" . }}
+      {{- if .Values.sidecar.initContainers.enabled }}
       initContainers:
-        - name: {{ .Values.initContainers.name }}
-          image: "{{ .Values.image.repository }}/{{ .Values.initContainers.image }}:{{ .Values.initContainers.tag | default .Chart.AppVersion }}"
+        - name: {{ .Values.sidecar.initContainers.name }}
+          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.initContainers.image }}:{{ .Values.sidecar.initContainers.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             runAsUser: 0

@@ -8,7 +8,7 @@ metadata:
    {{- include "codesealer.labels" . | nindent 4 }}  
   name: {{ .Values.manager.cert.name }}
   namespace: {{ .Values.namespace }}
-type: {{ .Values.manager.cert.type }}
+type: kubernetes.io/tls
 data:
   # Cert for {{ include "manager.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}

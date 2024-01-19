@@ -35,9 +35,6 @@ data:
     redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
     redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
     redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
-    influxAddress = {{ .Values.influxDB.influxAddress | quote }}
-    influxToken = {{ .Values.influxDB.influxToken | quote }}
-    influxIgnoreTLS = {{ .Values.influxDB.influxIgnoreTLS }}
     modSecurityConf = {{ .Values.worker.config.bootloader.modSecurityConf | quote }}
     fsEndpoints = false
     sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}

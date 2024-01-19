@@ -19,17 +19,15 @@ spec:
       {{- include "worker.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "codesealer.serviceAccountName" . | quote }}
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      - name: {{ template "codesealer.imagePullSecretName" . }}
       containers:
         - name: {{ include "worker.name" . }}
           image: "{{ .Values.image.repository }}/{{ .Values.worker.image }}:{{ .Values.worker.tag | default .Chart.AppVersion }}"
           {{ if .Values.worker.controlURL }}
           args: ["--control", "{{ .Values.worker.controlURL}}", "--clusterKey", "{{ .Values.worker.clusterKey}}"]
           {{ end }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.worker.config.network.listen }}
               protocol: TCP
