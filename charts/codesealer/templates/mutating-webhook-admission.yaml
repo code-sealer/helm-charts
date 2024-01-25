@@ -10,6 +10,7 @@ metadata:
   name: {{ .Values.sidecar.webhook.cert.name }}
   namespace: {{ .Values.namespace }}
 type: kubernetes.io/tls
+data:
   # Cert for {{ include "webhook.service.fullname" . }}
   tls.crt: {{ $tls.clientCert }}
   tls.key: {{ $tls.clientKey }}
