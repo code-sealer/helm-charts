@@ -276,10 +276,27 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
 
 ### Minikube
 
-To run this chart in sidecar mode with [Minikube](https://minikube.sigs.k8s.io/docs/),
-the easiest way to deploy an ingress is to use the Ingress addon:
+To run this chart in sidecar mode with [Minikube](https://minikube.sigs.k8s.io/docs/), there are some platform differences to be aware of.
+
+#### Mac OS and Windows
+
+On Mac and Windows, the `ingress-nginx` step in the instructions can be replaced by the built-in minikube ingress:
 
 ```bash
 minikube addons enable ingress
 minikube tunnel
 ```
+
+`minikube tunnel` has to be run in a separate terminal window, as it actively routes traffic.
+
+#### Linux
+
+On linux, minikube will expose the internal cluster IP of the service. This means that the service cannot be accessed on `localhost`.
+
+The command `minikube service list` will list the accessible cluster IP for the ingress, and this IP will need to be set to a hostname in `/etc/hosts`:
+
+```
+192.168.58.2 cs-deployment
+```
+
+Here `192.168.58.2` is used as an example. Then, the command to set up codesealer needs to have `remoteIn` set to this hostname. Additionally, the service behind the ingress needs to be configured with this hostname in its ingress configuration.
