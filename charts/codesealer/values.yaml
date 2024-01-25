@@ -64,7 +64,7 @@ worker:
   service:
     type: ClusterIP
     name: https
-    port: 8443
+    port: 9443
 
   # Settings for the CA used to sign certificates for the Workers.
   ca:
@@ -100,7 +100,7 @@ worker:
     # The 'network' section defines the basic server configuration of the reverse proxy.
     network:
       # The IP and port to listen for requests on.
-      listen: 8443
+      listen: 9443
       # If true, TLS will be enabled.
       tls: true
       # Sets the minimum TLS version the reverse proxy will use. Allowed values are:
@@ -515,7 +515,7 @@ sidecar:
       type: ClusterIP
       name: https
       port: 443
-      targetPort: 8443
+      targetPort: 9443
       scheme: HTTPS
 
     # The path for the webhook.
