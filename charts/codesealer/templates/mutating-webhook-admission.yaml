@@ -1,4 +1,5 @@
 {{- if .Values.sidecar.enabled }}
+{{- if (index .Values "ingress-nginx" "install") -}}{{ fail "ingress-nginx cannot be enabled in sidecar mode"}}{{- end -}}
 {{ $tls := fromYaml ( include "webhook.gen-certs" . ) }}
 {{- if .Values.sidecar.webhook.cert.create }}
 ---
