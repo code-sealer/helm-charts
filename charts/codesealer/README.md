@@ -150,7 +150,7 @@ helm install codesealer codesealer/codesealer --create-namespace --namespace cod
   --set sidecar.ingress.namespace="$INGRESS_NAMESPACE" \
   --set sidecar.ingress.deployment="$INGRESS_DEPLOYMENT" \
   --set sidecar.ingress.port="$INGRESS_PORT" \
-  --set-literal manager.init='{"Organizations":{"ffffffff-ffff-ffff-ffff-ffffffffffff":{"Name":"Default Organization","BackendID":"default","Endpoints":{"ffffffff-ffff-ffff-ffff-ffffffffffff":{"inScheme":"http","outScheme":"http","outHostname":"localhost"}},"AllowedDomains":["*"]}}}'
+  --set-literal manager.init='{"Organizations":{"55934bea-afc8-11ee-8578-2ec2e82b2333":{"Name":"Demo Organization","BackendID":"default","Endpoints":{"b7918ded-eae6-4a75-b6da-e44d59d1408a":{"remoteIn":"https://localhost","remoteOut":"https://127.0.0.1","allowedDomains":["*"],"scriptOptOut":true,"autoXhr":true,"enableWaf":true,"wafFullTransaction":true,"protectDynamicContent":true}},"AllowedDomains":["localhost"]}}}'
 ```
 
 To inject the sidecar into your ingress, label and patch your ingress deployment as
