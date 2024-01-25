@@ -594,14 +594,14 @@ redis:
     #   namespace.
     password: ""
 
-# Settings for the Ingress NGINX Controller subchar. This can be installed in standalone
+# Settings for the Ingress NGINX Controller subchart. This can be installed in standalone
 # mode to expose the Workers outside the cluster.
 #
 # See the chart's values with
 #   helm show values ingress-nginx --repo https://kubernetes.github.io/ingress-nginx
 # for a full list of all values that can be overridden.
 ingress-nginx:
-  install: true
+  install: false
 
   namespaceOverride: "codesealer-system"
 
