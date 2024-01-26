@@ -172,7 +172,7 @@ data:
     # configuration below to catch documents but avoid static files
     # (e.g., images and archives).
     #
-    SecResponseBodyMimeType text/plain text/html text/xml
+    SecResponseBodyMimeType text/plain text/html text/xml text/json
 
     # Buffer response bodies of up to 512 KB in length.
     SecResponseBodyLimit {{ .Values.worker.config.modsecurity.SecResponseBodyLimit }}
@@ -228,6 +228,7 @@ data:
     # and notice messages from the error log.
     #
     #SecDebugLog /opt/modsecurity/var/log/debug.log
+    SecDebugLog /dev/stdout
     #SecDebugLogLevel {{ .Values.worker.config.modsecurity.SecDebugLogLevel }}
 
 
