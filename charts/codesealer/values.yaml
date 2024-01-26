@@ -192,6 +192,7 @@ worker:
       # Enable ModSecurity, attaching it to every transaction. Use detection
       # only to start with, because that minimises the chances of post-installation
       # disruption.
+      # Values: 'On', 'Off', or 'Detection Only'
       SecRuleEngine: "On"
       # Allow ModSecurity to access request bodies. If you don't, ModSecurity
       # won't be able to see any POST parameters, which opens a large security
@@ -209,6 +210,7 @@ worker:
       # Keep in mind that this setting will automatically be set to ProcessPartial
       # when SecRuleEngine is set to DetectionOnly mode in order to minimize
       # disruptions when initially deploying ModSecurity.
+      # Values: Reject or ProcessPartial
       SecRequestBodyLimitAction: Reject
       # Allow ModSecurity to access response bodies.
       # You should have this directive enabled in order to identify errors
@@ -228,7 +230,8 @@ worker:
       # Log the transactions that are marked by a rule, as well as those that
       # trigger a server error (determined by a 5xx or 4xx, excluding 404,
       # level response status codes).
-      SecAuditEngine: RelevantOnly
+      # Values: Off, RelevantOnly
+      SecAuditEngine: Off
       SecAuditLogRelevantStatus: "^(?:5|4(?!04))"
       # Log everything we know about a transaction.
       SecAuditLogParts: ABIJDEFHZ
@@ -237,7 +240,7 @@ worker:
       # The following information will be shared: ModSecurity version,
       # Web Server version, APR version, PCRE version, Lua version, Libxml2
       # version, Anonymous unique id for host.
-      SecStatusEngine: "On"
+      SecStatusEngine: "Off"
 
       crs:
         # The Paranoia Level (PL) setting allows you to choose the desired level
