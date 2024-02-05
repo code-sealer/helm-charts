@@ -12,7 +12,7 @@ data:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       imagePullSecrets:
       - name: {{ template "codesealer.imagePullSecretName" . }}
-      {{- if .Values.sidecar.initContainers.enabled }}
+      {{- if .Values.sidecar.enabled }}
       initContainers:
         - name: {{ .Values.sidecar.initContainers.name }}
           image: "{{ .Values.image.repository }}/{{ .Values.sidecar.initContainers.image }}:{{ .Values.sidecar.initContainers.tag | default .Chart.AppVersion }}"

@@ -53,7 +53,7 @@ methods:
 1. (default) An init container that briefly runs in the same pod as the Ingress
    Controller. This requires `NET_ADMIN` privilege.
 2. Container Network Interface (`CNI`), which does not require elevated privileges. This
-   can be enabled by setting `sidecar.initContainers.enabled=false` when installing the
+   can be enabled by setting `sidecar.enabled=false` when installing the
    Helm Chart.
 
 Codesealer's sidecar mode uses an Admission Webhook to install Codesealer in the same
