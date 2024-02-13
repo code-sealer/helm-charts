@@ -125,7 +125,7 @@ To install Codesealer in standalone mode, run the following command:
 
 ```bash
 helm install codesealer codesealer/codesealer \
-  --create-namespace --namespace codesealer \
+  --create-namespace --namespace codesealer-system \
   --set codesealerToken="$CODESEALER_TOKEN" \
   --set worker.clusterKey="$CLUSTER_KEY" \
   --set worker.controlURL="$CONTROL_URL"
@@ -142,7 +142,7 @@ kubectl port-forward service/core-manager -n codesealer-system 8444:8444
 To install Codesealer in sidecar mode, run the following command:
 
 ```bash
-helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer \
+helm install codesealer codesealer/codesealer --create-namespace --namespace codesealer-system \
   --set codesealerToken="$CODESEALER_TOKEN" \
   --set worker.clusterKey="$CLUSTER_KEY" \
   --set worker.controlURL="$CONTROL_URL" \
@@ -182,7 +182,7 @@ helm repo update codesealer
 To upgrade the deployment using the same values, run the following command:
 
 ```bash
-helm upgrade --reuse-values --namespace codesealer codesealer codeealer/codesealer
+helm upgrade --reuse-values --namespace codesealer-system codesealer codeealer/codesealer
 ```
 
 If you want to specify new values, replace the `--reuse-values` flag with the
@@ -193,7 +193,7 @@ appropriate `--set` flags.
 To uninstall a Codesealer deployment, run the following commands:
 
 ```bash
-helm uninstall codesealer --namespace codesealer
+helm uninstall codesealer --namespace codesealer-system
 helm repo remove codesealer
 ```
 
