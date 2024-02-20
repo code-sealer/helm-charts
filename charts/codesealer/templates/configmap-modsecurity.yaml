@@ -17,7 +17,7 @@ data:
     # only to start with, because that minimises the chances of post-installation
     # disruption.
     #
-    SecRuleEngine {{ .Values.worker.config.modsecurity.SecRuleEngine }}
+    SecRuleEngine {{ .Values.worker.waf.SecRuleEngine }}
 
 
     # -- Request body handling ---------------------------------------------------
@@ -26,27 +26,27 @@ data:
     # won't be able to see any POST parameters, which opens a large security
     # hole for attackers to exploit.
     #
-    SecRequestBodyAccess {{ .Values.worker.config.modsecurity.SecRequestBodyAccess }}
+    SecRequestBodyAccess {{ .Values.worker.waf.SecRequestBodyAccess }}
 
 
     # Enable XML request body parser.
     # Initiate XML Processor in case of xml content-type
     #
-    SecRule REQUEST_HEADERS:Content-Type "(?:application(?:/soap\+|/)|text/)xml" \
-          "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+    SecRule REQUEST_HEADERS:Content-Type "^(?:application(?:/soap\+|/)|text/)xml" \
+         "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
     # Enable JSON request body parser.
     # Initiate JSON Processor in case of JSON content-type; change accordingly
     # if your application does not use 'application/json'
     #
-    SecRule REQUEST_HEADERS:Content-Type "application/json" \
-          "id:'200001',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+    SecRule REQUEST_HEADERS:Content-Type "^application/json" \
+         "id:'200001',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
 
     # Sample rule to enable JSON request body parser for more subtypes.
     # Uncomment or adapt this rule if you want to engage the JSON
     # Processor for "+json" subtypes
     #
-    #SecRule REQUEST_HEADERS:Content-Type "^application/.+[+]json$" \
+    #SecRule REQUEST_HEADERS:Content-Type "^application/[a-z0-9.-]+[+]json" \
     #     "id:'200006',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
 
     # Maximum request body size we will accept for buffering. If you support
@@ -55,15 +55,30 @@ data:
     # to the size of data, with files excluded. You want to keep that value as
     # low as practical.
     #
-    SecRequestBodyLimit {{ .Values.worker.config.modsecurity.SecRequestBodyLimit }}
-    SecRequestBodyNoFilesLimit {{ .Values.worker.config.modsecurity.SecRequestBodyNoFilesLimit }}
+    SecRequestBodyLimit {{ .Values.worker.waf.SecRequestBodyLimit }}
+    SecRequestBodyNoFilesLimit {{ .Values.worker.waf.SecRequestBodyNoFilesLimit }}
 
     # What to do if the request body size is above our configured limit.
     # Keep in mind that this setting will automatically be set to ProcessPartial
     # when SecRuleEngine is set to DetectionOnly mode in order to minimize
     # disruptions when initially deploying ModSecurity.
     #
-    SecRequestBodyLimitAction {{ .Values.worker.config.modsecurity.SecRequestBodyLimitAction }}
+    SecRequestBodyLimitAction {{ .Values.worker.waf.SecRequestBodyLimitAction }}
+
+    # Maximum parsing depth allowed for JSON objects. You want to keep this
+    # value as low as practical.
+    #
+    SecRequestBodyJsonDepthLimit 512
+
+    # Maximum number of args allowed per request. You want to keep this
+    # value as low as practical. The value should match that in rule 200007.
+    SecArgumentsLimit 1000
+
+    # If SecArgumentsLimit has been set, you probably want to reject any
+    # request body that has only been partly parsed. The value used in this
+    # rule should match what was used with SecArgumentsLimit
+    SecRule &ARGS "@ge 1000" \
+    "id:'200007', phase:2,t:none,log,deny,status:400,msg:'Failed to fully parse request body due to large argument count',severity:2"
 
     # Verify that we've correctly processed the request body.
     # As a rule of thumb, when failing to process a request body
@@ -139,7 +154,7 @@ data:
     # MULTIPART_UNMATCHED_BOUNDARY.
     #
     SecRule MULTIPART_UNMATCHED_BOUNDARY "@eq 1" \
-          "id:'200004',phase:2,t:none,log,deny,msg:'Multipart parser detected a possible unmatched boundary.'"
+        "id:'200004',phase:2,t:none,log,deny,msg:'Multipart parser detected a possible unmatched boundary.'"
 
 
     # PCRE Tuning
@@ -154,47 +169,47 @@ data:
     # MSC_PCRE_LIMITS_EXCEEDED: PCRE match limits were exceeded.
     #
     SecRule TX:/^MSC_/ "!@streq 0" \
-                "id:'200005',phase:2,t:none,deny,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+            "id:'200005',phase:2,t:none,deny,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
     # -- Response body handling --------------------------------------------------
 
-    # Allow ModSecurity to access response bodies. 
+    # Allow ModSecurity to access response bodies.
     # You should have this directive enabled in order to identify errors
     # and data leakage issues.
-    # 
+    #
     # Do keep in mind that enabling this directive does increases both
     # memory consumption and response latency.
     #
-    SecResponseBodyAccess {{ .Values.worker.config.modsecurity.SecResponseBodyAccess }}
+    SecResponseBodyAccess {{ .Values.worker.waf.SecResponseBodyAccess }}
 
     # Which response MIME types do you want to inspect? You should adjust the
     # configuration below to catch documents but avoid static files
     # (e.g., images and archives).
     #
-    SecResponseBodyMimeType text/plain text/html text/xml text/json
+    SecResponseBodyMimeType text/plain text/html text/xml
 
     # Buffer response bodies of up to 512 KB in length.
-    SecResponseBodyLimit {{ .Values.worker.config.modsecurity.SecResponseBodyLimit }}
+    SecResponseBodyLimit {{ .Values.worker.waf.SecResponseBodyLimit }}
 
     # What happens when we encounter a response body larger than the configured
     # limit? By default, we process what we have and let the rest through.
     # That's somewhat less secure, but does not break any legitimate pages.
     #
-    SecResponseBodyLimitAction {{ .Values.worker.config.modsecurity.SecResponseBodyLimitAction }}
+    SecResponseBodyLimitAction {{ .Values.worker.waf.SecResponseBodyLimitAction }}
 
 
     # -- Filesystem configuration ------------------------------------------------
 
     # The location where ModSecurity stores temporary files (for example, when
     # it needs to handle a file upload that is larger than the configured limit).
-    # 
-    # This default setting is chosen due to all systems have /tmp available however, 
+    #
+    # This default setting is chosen due to all systems have /tmp available however,
     # this is less than ideal. It is recommended that you specify a location that's private.
     #
     SecTmpDir /tmp/
 
-    # The location where ModSecurity will keep its persistent data.  This default setting 
+    # The location where ModSecurity will keep its persistent data.  This default setting
     # is chosen due to all systems have /tmp available however, it
     # too should be updated to a place that other users can't access.
     #
@@ -227,22 +242,21 @@ data:
     # The default debug log configuration is to duplicate the error, warning
     # and notice messages from the error log.
     #
-    #SecDebugLog /opt/modsecurity/var/log/debug.log
     SecDebugLog /dev/stdout
-    #SecDebugLogLevel {{ .Values.worker.config.modsecurity.SecDebugLogLevel }}
+    SecDebugLogLevel {{ .Values.worker.waf.SecDebugLogLevel }}
 
 
     # -- Audit log configuration -------------------------------------------------
 
     # Log the transactions that are marked by a rule, as well as those that
-    # trigger a server error (determined by a 5xx or 4xx, excluding 404,  
+    # trigger a server error (determined by a 5xx or 4xx, excluding 404,
     # level response status codes).
     #
-    SecAuditEngine {{ .Values.worker.config.modsecurity.SecAuditEngine }}
-    SecAuditLogRelevantStatus {{ .Values.worker.config.modsecurity.SecAuditLogRelevantStatus | quote }}
+    SecAuditEngine {{ .Values.worker.waf.SecAuditEngine }}
+    SecAuditLogRelevantStatus {{ .Values.worker.waf.SecAuditLogRelevantStatus | quote }}
 
     # Log everything we know about a transaction.
-    SecAuditLogParts {{ .Values.worker.config.modsecurity.SecAuditLogParts }}
+    SecAuditLogParts {{ .Values.worker.waf.SecAuditLogParts }}
 
     # Use a single file for logging. This is much easier to look at, but
     # assumes that you will use the audit log only ocassionally.
@@ -280,4 +294,4 @@ data:
     # The following information will be shared: ModSecurity version,
     # Web Server version, APR version, PCRE version, Lua version, Libxml2
     # version, Anonymous unique id for host.
-    SecStatusEngine {{ .Values.worker.config.modsecurity.SecStatusEngine }}
+    SecStatusEngine On
