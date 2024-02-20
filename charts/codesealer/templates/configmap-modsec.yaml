@@ -11,171 +11,83 @@ metadata:
   {{- end }}
 data:
   modsec.conf: |
-    Include modsecurity/modsecurity.conf
+    Include coreruleset/modsecurity.conf
 
-    # OWASP CRS v3 rules
-    Include modsecurity/crs-setup.conf
-    {{- if .Values.worker.config.modsecurity.rules.rules900.enabled }}
+    # OWASP CRS v4.0.0 rules
+    Include coreruleset/crs-setup.conf
 
-    Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
-    {{ else }}
-
-    # Include modsecurity/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    {{- if .Values.worker.waf.rules.rules901 }}
+    Include coreruleset/rules/REQUEST-901-INITIALIZATION.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules901.enabled }}
-
-    Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
-    {{ else }}
-    
-    # Include modsecurity/rules/REQUEST-901-INITIALIZATION.conf
+    {{- if .Values.worker.waf.rules.rules905 }}
+    Include coreruleset/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules903.enabled }}
-    Include modsecurity/rules/REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
-
-    Include modsecurity/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
-    
-    Include modsecurity/rules/REQUEST-903.9003-NEXTCLOUD-EXCLUSION-RULES.conf
-    
-    Include modsecurity/rules/REQUEST-903.9004-DOKUWIKI-EXCLUSION-RULES.conf
-    
-    Include modsecurity/rules/REQUEST-903.9005-CPANEL-EXCLUSION-RULES.conf
-    
-    Include modsecurity/rules/REQUEST-903.9006-XENFORO-EXCLUSION-RULES.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
-    
-    # Include modsecurity/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
-    
-    # Include modsecurity/rules/REQUEST-903.9003-NEXTCLOUD-EXCLUSION-RULES.conf
-    
-    # Include modsecurity/rules/REQUEST-903.9004-DOKUWIKI-EXCLUSION-RULES.conf
-    
-    # Include modsecurity/rules/REQUEST-903.9005-CPANEL-EXCLUSION-RULES.conf
-    
-    # Include modsecurity/rules/REQUEST-903.9006-XENFORO-EXCLUSION-RULES.conf
+    {{- if .Values.worker.waf.rules.rules911 }}
+    Include coreruleset/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules905.enabled }}
-    Include modsecurity/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-905-COMMON-EXCEPTIONS.conf
+    {{- if .Values.worker.waf.rules.rules913 }}
+    Include coreruleset/rules/REQUEST-913-SCANNER-DETECTION.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules910.enabled }}
-    Include modsecurity/rules/REQUEST-910-IP-REPUTATION.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-910-IP-REPUTATION.conf
+    {{- if .Values.worker.waf.rules.rules920 }}
+    Include coreruleset/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules911.enabled }}
-    Include modsecurity/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
+    {{- if .Values.worker.waf.rules.rules921 }}
+    Include coreruleset/rules/REQUEST-921-PROTOCOL-ATTACK.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules912.enabled }}
-    Include modsecurity/rules/REQUEST-912-DOS-PROTECTION.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-912-DOS-PROTECTION.conf
+    {{- if .Values.worker.waf.rules.rules922 }}
+    Include coreruleset/rules/REQUEST-922-MULTIPART-ATTACK.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules913.enabled }}
-    Include modsecurity/rules/REQUEST-913-SCANNER-DETECTION.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-913-SCANNER-DETECTION.conf
+    {{- if .Values.worker.waf.rules.rules930 }}
+    Include coreruleset/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules920.enabled }}
-    Include modsecurity/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+    {{- if .Values.worker.waf.rules.rules931 }}
+    Include coreruleset/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules921.enabled }}
-    Include modsecurity/rules/REQUEST-921-PROTOCOL-ATTACK.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-921-PROTOCOL-ATTACK.conf
+    {{- if .Values.worker.waf.rules.rules932 }}
+    Include coreruleset/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules930.enabled }}
-    Include modsecurity/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
+    {{- if .Values.worker.waf.rules.rules933 }}
+    Include coreruleset/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules932.enabled }}
-    Include modsecurity/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
+    {{- if .Values.worker.waf.rules.rules934 }}
+    Include coreruleset/rules/REQUEST-934-APPLICATION-ATTACK-GENERIC.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules932.enabled }}
-    Include modsecurity/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
+    {{- if .Values.worker.waf.rules.rules941 }}
+    Include coreruleset/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules933.enabled }}
-    Include modsecurity/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
+    {{- if .Values.worker.waf.rules.rules942 }}
+    Include coreruleset/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules934.enabled }}
-    Include modsecurity/rules/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
+    {{- if .Values.worker.waf.rules.rules943 }}
+    Include coreruleset/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules941.enabled }}
-    Include modsecurity/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
+    {{- if .Values.worker.waf.rules.rules944 }}
+    Include coreruleset/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules942.enabled }}
-    Include modsecurity/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+    {{- if .Values.worker.waf.rules.rules949 }}
+    Include coreruleset/rules/REQUEST-949-BLOCKING-EVALUATION.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules943.enabled }}
-    Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+    {{- if .Values.worker.waf.rules.rules950 }}
+    Include coreruleset/rules/RESPONSE-950-DATA-LEAKAGES.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules944.enabled }}
-    Include modsecurity/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
+    {{- if .Values.worker.waf.rules.rules951 }}
+    Include coreruleset/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules949.enabled }}
-    Include modsecurity/rules/REQUEST-949-BLOCKING-EVALUATION.conf
-    {{ else }}
-    # Include modsecurity/rules/REQUEST-949-BLOCKING-EVALUATION.conf
+    {{- if .Values.worker.waf.rules.rules952 }}
+    Include coreruleset/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules950.enabled }}
-    Include modsecurity/rules/RESPONSE-950-DATA-LEAKAGES.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-950-DATA-LEAKAGES.conf
+    {{- if .Values.worker.waf.rules.rules953 }}
+    Include coreruleset/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules951.enabled }}
-    Include modsecurity/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf
+    {{- if .Values.worker.waf.rules.rules954 }}
+    Include coreruleset/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules952.enabled }}
-    Include modsecurity/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+    {{- if .Values.worker.waf.rules.rules955 }}
+    Include coreruleset/rules/RESPONSE-955-WEB-SHELLS.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules953.enabled }}
-    Include modsecurity/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf
+    {{- if .Values.worker.waf.rules.rules959 }}
+    Include coreruleset/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
     {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules954.enabled }}
-    Include modsecurity/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf
-    {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules959.enabled }}
-    Include modsecurity/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
-    {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules980.enabled }}
-    Include modsecurity/rules/RESPONSE-980-CORRELATION.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-980-CORRELATION.conf
-    {{- end }}
-    {{- if .Values.worker.config.modsecurity.rules.rules999.enabled }}
-    Include modsecurity/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
-    {{ else }}
-    # Include modsecurity/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+    {{- if .Values.worker.waf.rules.rules980 }}
+    Include coreruleset/rules/RESPONSE-980-CORRELATION.conf
     {{- end }}
