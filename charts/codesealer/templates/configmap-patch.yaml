@@ -15,7 +15,7 @@ data:
       {{- if .Values.sidecar.initContainers.enabled }}
       initContainers:
         - name: {{ .Values.sidecar.initContainers.name }}
-          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.initContainers.image }}:{{ .Values.sidecar.initContainers.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.initContainers.image }}:{{ .Values.sidecar.initContainers.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             runAsUser: 0
