@@ -47,8 +47,8 @@ worker:
   # Docker image to use for the workers.
   image: release/codesealer-core-hybrid-modsec
 
-  # Docker image tag to use for the workers.
-  tag: latest
+  # Docker image tag to use for the workers. Overrides the default tag of .Chart.AppVersion.
+  # tag: latest
 
   # Number of workers to create in standalone mode.
   replicaCount: 1
@@ -310,11 +310,11 @@ manager:
   # Name to use for worker related resources.
   name: core-manager
 
-  # Docker image to use for the workers.
+  # Docker image to use for the manager.
   image: release/core-manager
 
-  # Docker image tag to use for the workers.
-  tag: latest
+  # Docker image tag to use for the manager. Overrides the default tag of .Chart.AppVersion.
+  # tag: latest
 
   # An initial seed value for organization settings.
   init: ""
@@ -396,7 +396,7 @@ sidecar:
     enabled: true
     name: codesealer-init-networking
     image: codesealer-init-networking
-    tag: latest
+    tag: 0.1.0
 
   # Settings that affect the webhook used to inject Codesealer.
   webhook:
@@ -407,7 +407,7 @@ sidecar:
     image: codesealer-webhook
 
     # Docker image tag to use for the webhooks.
-    tag: latest
+    tag: 0.1.0
 
     # Number of webhooks to create.
     replicaCount: 1

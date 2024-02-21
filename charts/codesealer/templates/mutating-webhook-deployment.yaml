@@ -22,7 +22,7 @@ spec:
       - name: {{ template "codesealer.imagePullSecretName" . }}
       containers:
         - name: {{ include "webhook.name" . }}
-          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.webhook.image }}:{{ .Values.sidecar.webhook.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}/{{ .Values.sidecar.webhook.image }}:{{ .Values.sidecar.webhook.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.sidecar.webhook.service.targetPort }}
