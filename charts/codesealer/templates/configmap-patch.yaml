@@ -50,10 +50,10 @@ data:
               mountPath: /etc/codesealer-core/modsec.conf
               subPath: modsec.conf
             - name: modsecurity-conf
-              mountPath: /etc/codesealer-core/modsecurity/modsecurity.conf
+              mountPath: /etc/codesealer-core/coreruleset/modsecurity.conf
               subPath: modsecurity.conf
             - name: crs-setup-conf
-              mountPath: /etc/codesealer-core/modsecurity/crs-setup.conf
+              mountPath: /etc/codesealer-core/coreruleset/crs-setup.conf
               subPath: crs-setup.conf
           env:
           - name: REDIS_PASSWORD
