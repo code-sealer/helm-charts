@@ -1,0 +1,34 @@
+{{- if .Values.networkPolicy.enabled }}
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ .Values.networkPolicy.name }}
+  labels:
+    {{- include "codesealer.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace }}
+spec:
+  {{- if .Values.sidecar.enabled }}
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          namespace: {{ .Values.sidecar.ingress.namespace }}
+    ports:
+      - protocol: TCP
+        port: {{ .Values.redis.service.ports.redis }}
+  {{- else }}    
+  podSelector:
+    matchLabels:
+      component: controller
+  ingress:
+  - ports:
+      - protocol: TCP
+        port: 443
+  {{- end }}
+  egress:
+  - {}
+  policyTypes:
+    - Ingress
+    - Egress
+{{- end }}

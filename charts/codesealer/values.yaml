@@ -24,6 +24,11 @@ fullnameOverride: ""
 # The name of the Codesealer namespace.
 namespace: "codesealer-system"
 
+# Network Policy
+networkPolicy:
+  enabled: false
+  name: codesealer-network-policy
+
 # Settings for the Codesealer service account.
 serviceAccount:
   # Specifies whether a service account should be created.
