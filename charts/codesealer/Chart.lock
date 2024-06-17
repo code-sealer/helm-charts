@@ -1,9 +1,9 @@
 dependencies:
 - name: redis
   repository: oci://registry-1.docker.io/bitnamicharts
-  version: 18.6.4
+  version: 19.5.3
 - name: ingress-nginx
   repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.9.0
-digest: sha256:e59bbb38c3bd4a723ab2dc8f87d9577af4f36896a61f12d8b7274294ec8f3518
-generated: "2024-01-18T09:57:54.783896825+01:00"
+  version: 4.10.1
+digest: sha256:8bc933ee95b224a6384dd3a5a419558f339c0ba7384be10923bf368139ec750f
+generated: "2024-06-17T13:15:39.850246425+02:00"

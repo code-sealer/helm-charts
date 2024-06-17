@@ -129,14 +129,20 @@ worker:
       # accessed by the proxy, disallowing addresses such as loopback or multicast addresses
       # (note that private addresses count as global). These options are useful to restrict
       # Management Portal users from attempting to access local or private infrastructure.
+      # Valid values:
+      #   - "true": Block requests
+      #   - "false": Allow requests
+      #   - "no-endpoint": Block unless request is for a configured endpoint
       disallowLocal: false
       disallowPrivate: false
       # The timeout, in seconds, before giving up on requests to the backend server.
       remoteTimeout: 5
       # If true, the Worker will assume that the last entry in the last `X-Forwarded-For`
       # header is the actual client IP for use in logs and IP allow-lists for endpoints.
-      # Additionally the last field in X-Forwarded-Proto will be used to determine whether to
-      # set "Secure" on outgoing cookies.
+      # Additionally the last field in X-Forwarded-Proto will be used to:
+      # * Determine whether to set "Secure" on outgoing cookies.
+      # * What scheme to use for internal Codesealer requests, including ANP requests. Note
+      #   that in this case it might be necessary to configure both http and https endpoints.
       # Incompatible with 'network.useProxyProtocol'.
       behindProxy: false
       # When true, PROXY protocol will be enabled on the listening socket. Both version 1
@@ -165,11 +171,6 @@ worker:
       # Path to a configuration file for the Web Application Firewall. The file must contain a
       # set of ModSecurity rules.
       modSecurityConf: "./modsec.conf"
-      # This sets the prefix all HTTP requests related to the bootloader will get. It is
-      # crucial that this is chosen to avoid potential clashes with actual served files. # The
-      # bootPrefix must start and end with '/', and can only contain characters
-      # 'A-Za-z0-9_.~-'.
-      bootPrefix: "/~bl/"
       # Can be set to "redis" or "local". For "redis", state is shared amongst
       # workers through the configured Redis instance. With "local", state is stored
       # in memory in the worker. The "redis" instance is required for sharing
