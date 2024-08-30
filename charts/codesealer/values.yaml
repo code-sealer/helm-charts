@@ -50,7 +50,7 @@ worker:
   name: codesealer-core
 
   # Docker image to use for the workers.
-  image: release/codesealer-core-hybrid-modsec
+  image: release/codesealer-core-hybrid
 
   # Docker image tag to use for the workers. Overrides the default tag of .Chart.AppVersion.
   # tag: latest
@@ -168,9 +168,14 @@ worker:
       redisReadTimeout: 250
       # Redis write timeout specified in milliseconds. Defaults to 250 if not set.
       redisWriteTimeout: 250
-      # Path to a configuration file for the Web Application Firewall. The file must contain a
-      # set of ModSecurity rules.
-      modSecurityConf: "./modsec.conf"
+      # Path to a configuration file for the Web Application Firewall. The file must
+      # contain a set of valid SecLang rules. Since Coraza is used internally, the rule
+      # set needs to be compatible with Coraza. If not specified, a built in default
+      # rule set based on OWASP Core Rule Set will be used.
+      wafConf: ""
+      # If set to true, the WAF audit log will be output to the standard log. This can
+      # be quite verbose, but is useful for debugging.
+      wafAuditLog: false
       # Can be set to "redis" or "local". For "redis", state is shared amongst
       # workers through the configured Redis instance. With "local", state is stored
       # in memory in the worker. The "redis" instance is required for sharing
@@ -190,123 +195,6 @@ worker:
       maxFileSize: 0
       # The maximum total size of the cache, in bytes.
       maxSize: 0
-
-  ################################################
-  #                 WAF settings                 #
-  ################################################
-  waf:
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#user-content-SecRuleEngine
-    SecRuleEngine: "On"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#user-content-SecRequestBodyAccess
-    SecRequestBodyAccess: "On"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secrequestbodylimit
-    SecRequestBodyLimit: "13107200"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secrequestbodynofileslimit
-    SecRequestBodyNoFilesLimit: "131072"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secrequestbodylimitaction
-    SecRequestBodyLimitAction: Reject
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secresponsebodyaccess
-    SecResponseBodyAccess: "On"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secresponsebodylimit
-    SecResponseBodyLimit: "524288"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secresponsebodylimitaction
-    SecResponseBodyLimitAction: ProcessPartial
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secdebugloglevel
-    SecDebugLogLevel: 0
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#user-content-SecAuditEngine
-    SecAuditEngine: "Off"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#secauditlogrelevantstatus
-    SecAuditLogRelevantStatus: "^(?:5|4(?!04))"
-
-    # https://github.com/owasp-modsecurity/ModSecurity/wiki/Reference-Manual-(v3.x)#user-content-SecAuditLogParts
-    SecAuditLogParts: ABIJDEFHZ
-
-    crs:
-      # https://coreruleset.org/docs/concepts/paranoia_levels/
-      blocking_paranoia_level: 1
-      detection_paranoia_level: 1
-
-      # ModSecurity selects the body processor based on the Content-Type request
-      # header. But clients are not always setting the Content-Type header for their
-      # request body payloads. This will leave ModSecurity with limited vision into
-      # the payload.  The variable tx.enforce_bodyproc_urlencoded lets you force the
-      # URLENCODED body processor in these situations. This is off by default, as it
-      # implies a change of the behaviour of ModSecurity beyond CRS (the body
-      # processor applies to all rules, not only CRS) and because it may lead to
-      # false positives already on paranoia level 1. However, enabling this variable
-      # closes a possible bypass of CRS so it should be considered.
-      enforce_bodyproc_urlencoded: 0
-
-      # https://coreruleset.org/docs/concepts/anomaly_scoring/
-      critical_anomaly_score: 5
-      error_anomaly_score: 4
-      warning_anomaly_score: 3
-      notice_anomaly_score: 2
-      inbound_anomaly_score_threshold: 5
-      outbound_anomaly_score_threshold: 4
-
-    # https://coreruleset.org/docs/rules/rules/
-    rules:
-      # Request: Initialization
-      rules901: true
-      # Request: Common Exceptions
-      rules905: true
-      # Request: Method Enforcement
-      rules911: false
-      # Request: Scanner Detection
-      rules913: true
-      # Request: Protocol Enforcement
-      rules920: false
-      # Request: Protocol Attack
-      rules921: true
-      # Request: Multipart Attack
-      rules922: false
-      # Request: Application Attack LFI
-      rules930: true
-      # Request: Application Attack RFI
-      rules931: false
-      # Request: Application Attack RCE
-      rules932: false
-      # Request: Application Attack PHP
-      rules933: false
-      # Request: Application Attack Generic
-      rules934: false
-      # Request: Application Attack XSS
-      rules941: true
-      # Request: Application Attack SQLi
-      rules942: true
-      # Request: Application Attack Session Fixation
-      rules943: true
-      # Request: Application Attack Java
-      rules944: false
-      # Request: Blocking Evaluation
-      rules949: true
-      # Response: Data Leakages
-      rules950: false
-      # Response: Data Leakages SQL
-      rules951: false
-      # Response: Data Leakages Java
-      rules952: false
-      # Response: Data Leakages PHP
-      rules953: false
-      # Response: Data Leakages IIS
-      rules954: false
-      # Response: Web Shells
-      rules955: false
-      # Response: Blocking Evaluation
-      rules959: false
-      # Response: Correlation
-      rules980: false
 
 ###################################
 ##        Manager settings       ##

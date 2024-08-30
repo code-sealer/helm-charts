@@ -38,15 +38,6 @@ spec:
             - name: {{ .Values.worker.cert.name }}
               mountPath: /etc/codesealer-core/certs
               readOnly: true
-            - name: modsec-conf
-              mountPath: /etc/codesealer-core/modsec.conf
-              subPath: modsec.conf
-            - name: modsecurity-conf
-              mountPath: /etc/codesealer-core/coreruleset/modsecurity.conf
-              subPath: modsecurity.conf
-            - name: crs-setup-conf
-              mountPath: /etc/codesealer-core/coreruleset/crs-setup.conf
-              subPath: crs-setup.conf
           env:
           - name: REDIS_PASSWORD
             {{ if .Values.redis.install -}}
@@ -64,13 +55,4 @@ spec:
         - name: {{ .Values.worker.cert.name }}
           secret:
             secretName: {{ .Values.worker.cert.name }}
-        - name: modsec-conf
-          configMap:
-            name: modsec-conf
-        - name: modsecurity-conf
-          configMap:
-            name: modsecurity-conf
-        - name: crs-setup-conf
-          configMap:
-            name: crs-setup-conf
 {{- end }}

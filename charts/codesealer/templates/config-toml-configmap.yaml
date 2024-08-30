@@ -35,7 +35,8 @@ data:
     redisConnectTimeout = {{ .Values.worker.config.bootloader.redisConnectTimeout }}
     redisReadTimeout = {{ .Values.worker.config.bootloader.redisReadTimeout }}
     redisWriteTimeout = {{ .Values.worker.config.bootloader.redisWriteTimeout }}
-    modSecurityConf = {{ .Values.worker.config.bootloader.modSecurityConf | quote }}
+    wafConf = {{ .Values.worker.config.bootloader.wafConf | quote }}
+    wafAuditLog = {{ .Values.worker.config.bootloader.wafAuditLog }}
     fsEndpoints = false
     sessionBackend = {{ .Values.worker.config.bootloader.sessionBackend | quote }}
 
