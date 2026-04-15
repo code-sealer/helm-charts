@@ -2,6 +2,25 @@ apiVersion: v1
 entries:
   codesealer:
   - apiVersion: v2
+    appVersion: 26.03.1-27eeae70
+    created: "2026-04-15T11:20:32.159325757Z"
+    dependencies:
+    - condition: redis.install
+      name: redis
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 19.5.3
+    - condition: ingress-nginx.install
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.10.1
+    description: A Helm chart for Codesealer
+    digest: 93c5e2e40a680736df72c3cea1b686fa7887f55ee9f74d4d61b4d19a430cd987
+    name: codesealer
+    type: application
+    urls:
+    - https://github.com/code-sealer/helm-charts/releases/download/codesealer-1.0.2/codesealer-1.0.2.tgz
+    version: 1.0.2
+  - apiVersion: v2
     appVersion: 25.09-6eaf3e53
     created: "2025-10-01T11:34:46.64563622Z"
     dependencies:
@@ -344,4 +363,4 @@ entries:
     urls:
     - https://github.com/code-sealer/helm-charts/releases/download/codesealer-0.1.0/codesealer-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-01T11:34:46.645764227Z"
+generated: "2026-04-15T11:20:32.159465648Z"
